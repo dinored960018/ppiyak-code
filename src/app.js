@@ -184,7 +184,7 @@ const ALL = [];
 const LESSONS = [];
 UNITS.forEach(u => u.lessons.forEach(l => {
   LESSONS.push({ ...l, unit: u });
-  l.qs.forEach((q, i) => { q.id = `${l.id}-${i}`; q.subj = u.subj; q.unit = u.id; q.lesson = l.id; q.lname = l.name; ALL.push(q); });
+  l.qs.forEach((q, i) => { q.id = `${l.id}-${i}`; q.subj = l.subj || u.subj; q.unit = u.id; q.lesson = l.id; q.lname = l.name; ALL.push(q); });
 }));
 const byId = id => ALL.find(q => q.id === id);
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -347,7 +347,7 @@ function viewMock() {
     <div class="card mock-card"><div><h3>필기 실전</h3><p>60문항 · 60분 · 60점 이상 합격</p></div><button class="btn small" data-mock="w60">시작</button></div>
     <div class="card mock-card"><div><h3>필기 맛보기</h3><p>20문항 · 20분</p></div><button class="btn small ghost" data-mock="w20">시작</button></div>
     <div class="card mock-card"><div><h3>실기 필답 연습</h3><p>12문항 · 90분 · 답을 직접 입력</p></div><button class="btn small" data-mock="p12">시작</button></div>
-    <p class="note">실기는 2027년부터 필답형이야. 종이에 먼저 풀고 답만 입력하면 실제 시험과 가까워져. 실제 문항 수, 부분 점수 기준은 확인 못 했어.</p>
+    <p class="note">실기는 2027년부터 필답형이고, 출제기준 항목은 프로그래밍 언어와 SQL이야. 종이에 먼저 풀고 답만 입력하면 실제 시험과 가까워져. 실제 문항 수, 부분 점수 기준은 확인 못 했어.</p>
     <div class="section"><h2>지난 점수</h2>${hist.length ? `<div class="rows">${hist.map(m => `<div class="row"><span>${esc(m.d)} · ${esc(m.name)}</span><b class="${m.score >= 60 ? 'pass' : 'fail'}">${m.score}점</b></div>`).join('')}</div>` : '<p class="note">아직 없어. 40점이 55점 되는 걸 여기서 보게 될 거야.</p>'}</div>`;
 }
 const G_ICON = '<svg class="icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.700 1.200 9.200 3.600l6.800-6.800C35.900 2.400 30.5 0 24 0 14.600 0 6.5 5.400 2.600 13.200l7.900 6.200C12.400 13.700 17.700 9.5 24 9.5z"/><path fill="#4285F4" d="M46.100 24.5c0-1.600-.1-3.100-.4-4.5H24v9h12.400c-.5 2.900-2.200 5.300-4.600 7l7.200 5.600c4.200-3.900 7.100-9.600 7.100-17.100z"/><path fill="#FBBC05" d="M10.5 28.600A14.5 14.5 0 0 1 9.700 24c0-1.600.3-3.100.8-4.600l-7.900-6.200A24 24 0 0 0 0 24c0 3.900.9 7.5 2.600 10.800z"/><path fill="#34A853" d="M24 48c6.5 0 11.900-2.100 15.900-5.800l-7.200-5.600c-2 1.400-4.600 2.200-8.700 2.200-6.300 0-11.600-4.200-13.5-9.900l-7.900 6.100C6.5 42.600 14.600 48 24 48z"/></svg>';
@@ -395,7 +395,7 @@ function viewStats(d) {
     ['11월', 'Python·Java 코드 읽기, SQL', mon === 11],
     ['12월', '필기 책 1권 빠르게, 나머지 과목 레슨', mon === 12],
     ['1월', '접수하고 필기 모의고사 반복', mon === 1],
-    ['필기 후', 'Linux, 실기 필답 연습', mon >= 2 && mon <= 4],
+    ['필기 후', '언어·SQL 실기 필답 연습', mon >= 2 && mon <= 4],
   ];
   return `<h1 class="page-title">기록</h1><p class="page-sub">${UID ? '내 계정에 저장돼서 폰과 PC에서 이어져.' : '이 기기의 브라우저에만 저장돼. 프로필 탭에서 로그인하면 폰과 PC에서 이어져.'}</p>
     <div class="card"><h3>최근 7일 XP</h3><div class="week">${days.map(x => { const v = dayOf(x).xp; return `<div class="${v ? '' : 'zero'}"><span>${v || ''}</span><i style="height:${Math.max(3, v / max * 80)}px"></i><span>${Number(x.slice(8))}일</span></div>`; }).join('')}</div></div>
@@ -669,7 +669,7 @@ function startMock(type) {
   let qs = [], mins, name;
   if (type === 'p12') {
     const take = (pre, n) => shuffle(ALL.filter(q => q.k === 'in' && pre.includes(q.lesson.slice(0, 2)))).slice(0, n);
-    qs = shuffle([...take(['lx'], 2), ...take(['py'], 4), ...take(['jv'], 3), ...take(['sq'], 3)]);
+    qs = shuffle([...take(['py'], 4), ...take(['jv'], 3), ...take(['js'], 1), ...take(['sq'], 4)]);
     mins = 90; name = '실기 필답';
   } else {
     const each = type === 'w60' ? 15 : 5;

@@ -6,11 +6,12 @@ const norm = s => String(s).trim().replace(/\s+/g, ' ').replace(/\s*,\s*/g, ',')
 let n = 0, bad = 0;
 const stat = {}, kinds = {};
 for (const u of UNITS) for (const l of u.lessons) {
+  const subj = l.subj || u.subj;
   l.qs.forEach((q, i) => {
-    stat[u.subj] = stat[u.subj] || { mc: 0, numIn: 0, all: 0 };
-    stat[u.subj].all++;
-    if (q.k === 'mc') stat[u.subj].mc++;
-    if (q.k === 'in' && /^-?\d+(\.\d+)?$/.test(q.a[0])) stat[u.subj].numIn++;
+    stat[subj] = stat[subj] || { mc: 0, numIn: 0, all: 0 };
+    stat[subj].all++;
+    if (q.k === 'mc') stat[subj].mc++;
+    if (q.k === 'in' && /^-?\d+(\.\d+)?$/.test(q.a[0])) stat[subj].numIn++;
     kinds[q.k] = (kinds[q.k] || 0) + 1;
     if (q.k === 'mc' && (q.a < 0 || q.a >= q.o.length || new Set(q.o).size !== q.o.length)) { bad++; console.log('객관식 오류', l.id, i); }
     if (q.k === 'match' && new Set(q.pairs.map(p => p[1])).size !== q.pairs.length) { bad++; console.log('짝 중복', l.id, i); }
