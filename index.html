@@ -280,6 +280,23 @@ input[type="date"] { padding: 9px 11px; border: 2px solid var(--line); border-ra
   .conf { display: none; }
 }
 
+/* 로그인과 프로필 */
+.google { gap: 10px; }
+.me-card { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; }
+.me-card .chick { width: 48px; height: 48px; flex: none; }
+.me-card b { display: block; font-size: 16px; font-weight: 800; }
+.profile-head { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.profile-head .chick { width: 92px; height: 92px; flex: none; }
+.profile-main { flex: 1; min-width: 0; }
+.name-input { width: 100%; height: 46px; padding: 0 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 18px; font-weight: 800; margin: 2px 0 4px; outline: 0; }
+.name-input:focus { border-color: var(--blue); }
+.dots { display: flex; gap: 10px; flex-wrap: wrap; }
+.dot { width: 44px; height: 44px; border-radius: 50%; background: var(--c); border: 3px solid var(--bg); box-shadow: 0 0 0 2px var(--line); transition: transform 90ms var(--ease); }
+.dot:active { transform: scale(.94); }
+.dot.on { box-shadow: 0 0 0 3px var(--ink); }
+.done-page .google { margin-top: 8px; }
+@media (max-width: 420px) { .nav { font-size: 11px; } }
+
 </style>
 </head>
 <body>
@@ -723,22 +740,168 @@ const UNITS = [
 
 /* global UNITS */
 const KEY = 'ppiyak-code-v1';
-const DEF = { xp: 0, days: {}, l: {}, q: {}, mocks: [], goal: 20, exam: '', sound: true, tab: 'home' };
+const DEF = { xp: 0, days: {}, l: {}, q: {}, mocks: [], goal: 20, exam: '', sound: true, tab: 'home', profile: { name: '', color: 0 }, setAt: 0, resetAt: 0 };
+const FB = { apiKey: 'AIzaSyB-3tQY4yLI1eiR-bl4nFdEms9L3zhe5jU', authDomain: 'ppiyak-code.firebaseapp.com', projectId: 'ppiyak-code', appId: '1:542823112561:web:a5a00fabb856fb980920d0' };
+const FB_VER = '10.14.1';
+const LAST = 'ppiyak-last-uid', GUEST_OK = 'ppiyak-guest-ok';
+const COLORS = [['노랑', '#ffc933', '#f2b100', '#ffe08a'], ['민트', '#5fd8b8', '#34b896', '#bff0e2'], ['하늘', '#6fbdf5', '#3f97d8', '#c7e5fb'], ['분홍', '#f79ac0', '#e06f9e', '#fcd5e5'], ['보라', '#b79bf2', '#9272d8', '#e1d5fa'], ['주황', '#ff9f5a', '#e57f35', '#ffd7b8']];
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* 저장이 막힌 환경 */ } };
+const lsDel = k => { try { localStorage.removeItem(k); } catch { /* 저장이 막힌 환경 */ } };
+let UID = lsGet(LAST);
+let cloud = { user: null, ready: false, api: null, status: 'idle', at: null, loading: true, pulled: 0, timer: null };
 const SR = [0, 1, 3, 7, 16];
 const SUBJ = { lang: '프로그래밍 언어', app: '응용SW 기초기술', sql: 'SQL 활용', sys: '정보시스템 기초기술' };
 const LESSON_LEN = 8;
 
-let S = load();
+let S = load(storeKey());
 let L = null;   // 진행 중인 레슨
 let E = null;   // 진행 중인 모의고사
 let sheet = null;
 let audio = null;
 
 /* ---------- 저장 ---------- */
-function load() {
-  try { return { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEF }; }
+function storeKey(uid = UID) { return uid ? `${KEY}:${uid}` : KEY; }
+function load(k) {
+  try { return { ...DEF, ...JSON.parse(lsGet(k) || '{}') }; } catch { return { ...DEF }; }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* 저장이 막힌 환경에서는 이번 창에서만 유지 */ } }
+function save() {
+  lsSet(storeKey(), JSON.stringify(S));
+  if (UID && cloud.ready) schedulePush();
+}
+
+/* ---------- 로그인과 동기화 ---------- */
+function mergeState(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  if ((a.resetAt || 0) !== (b.resetAt || 0)) return (a.resetAt || 0) > (b.resetAt || 0) ? a : b;
+  const base = (a.setAt || 0) >= (b.setAt || 0) ? a : b;
+  const out = { ...DEF, ...base, tab: a.tab, lastResult: a.lastResult || b.lastResult };
+  out.days = { ...a.days };
+  for (const [k, v] of Object.entries(b.days || {})) { const c = out.days[k] || { xp: 0, ok: 0 }; out.days[k] = { xp: Math.max(c.xp, v.xp), ok: Math.max(c.ok, v.ok) }; }
+  out.l = { ...a.l };
+  for (const [k, v] of Object.entries(b.l || {})) out.l[k] = { n: Math.max(out.l[k]?.n || 0, v.n) };
+  out.q = { ...a.q };
+  for (const [k, v] of Object.entries(b.q || {})) { const c = out.q[k]; out.q[k] = !c ? v : { ...(c.due >= v.due ? c : v), wrong: Math.max(c.wrong, v.wrong) }; }
+  const seen = new Set();
+  out.mocks = [...(a.mocks || []), ...(b.mocks || [])].filter(m => { const k = [m.d, m.name, m.score, m.right].join('|'); if (seen.has(k)) return false; seen.add(k); return true; }).sort((x, y) => (x.d < y.d ? -1 : x.d > y.d ? 1 : 0));
+  out.xp = Object.values(out.days).reduce((s, d) => s + d.xp, 0);
+  return out;
+}
+const hasProgress = s => s && (s.xp > 0 || Object.keys(s.q || {}).length > 0 || (s.mocks || []).length > 0);
+function stamp() { S.setAt = Date.now(); }
+async function pullCloud() {
+  const { getDoc } = cloud.api;
+  const snap = await getDoc(cloud.ref());
+  cloud.pulled = Date.now();
+  return snap.exists() ? { ...DEF, ...JSON.parse(snap.data().state) } : null;
+}
+function schedulePush() {
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(pushCloud, 1500);
+}
+async function pushCloud() {
+  clearTimeout(cloud.timer);
+  if (!UID || !cloud.ready) return false;
+  const { tab, ...rest } = S;
+  try {
+    await cloud.api.setDoc(cloud.ref(), { state: JSON.stringify(rest), updatedAt: cloud.api.serverTimestamp() });
+    cloud.status = 'ok'; cloud.at = new Date();
+    return true;
+  } catch {
+    cloud.status = 'fail';
+    return false;
+  } finally {
+    const el = document.getElementById('syncStatus');
+    if (el) el.textContent = syncText();
+  }
+}
+async function onUser(user) {
+  cloud.user = user; cloud.loading = false; cloud.ready = false;
+  if (!user) {
+    if (UID) { UID = null; lsDel(LAST); S = load(storeKey()); }
+    if (!L && !E) renderApp();
+    return;
+  }
+  const prev = UID === user.uid ? S : load(storeKey(user.uid));
+  const guest = lsGet(KEY) ? load(KEY) : null;
+  UID = user.uid; lsSet(LAST, UID); lsSet(GUEST_OK, '1');
+  S = prev;
+  cloud.status = 'syncing';
+  if (!L && !E) renderApp();
+  try {
+    const remote = await pullCloud();
+    if (L || E) { S = mergeState(S, remote); } else { S = mergeState(mergeState(prev, guest), remote); }
+    if (guest) lsDel(KEY);
+    if (!S.profile?.name) S.profile = { color: S.profile?.color || 0, name: user.displayName || '' };
+    cloud.ready = true;
+    save();
+    await pushCloud();
+  } catch {
+    cloud.status = 'fail';
+  }
+  if (!L && !E) renderApp();
+}
+async function initCloud() {
+  try {
+    const base = `https://www.gstatic.com/firebasejs/${FB_VER}`;
+    const [{ initializeApp }, authMod, fsMod] = await Promise.all([import(`${base}/firebase-app.js`), import(`${base}/firebase-auth.js`), import(`${base}/firebase-firestore.js`)]);
+    const fbApp = initializeApp(FB);
+    const auth = authMod.getAuth(fbApp), db = fsMod.getFirestore(fbApp);
+    auth.languageCode = 'ko';
+    cloud.api = { ...fsMod, auth, authMod };
+    cloud.ref = () => fsMod.doc(db, 'users', UID);
+    authMod.onAuthStateChanged(auth, onUser);
+  } catch {
+    cloud.loading = false; cloud.status = 'offline';
+    if (!L && !E) renderApp();
+  }
+}
+async function login() {
+  if (!cloud.api) return confirmBox('지금은 로그인할 수 없어', '인터넷 연결을 확인하고 웹 주소로 열어 줘.', '닫기', '확인', () => {});
+  try {
+    const { GoogleAuthProvider, signInWithPopup } = cloud.api.authMod;
+    await signInWithPopup(cloud.api.auth, new GoogleAuthProvider());
+  } catch (err) {
+    const code = err?.code || '';
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+    const msg = code === 'auth/popup-blocked' ? '브라우저가 로그인 창을 막았어. 팝업을 허용하고 다시 눌러 줘.'
+      : code === 'auth/unauthorized-domain' || code === 'auth/operation-not-supported-in-this-environment' ? '내려받은 파일에서는 로그인이 안 돼. 웹 주소로 열어 줘.'
+        : '로그인하지 못했어. 잠시 뒤에 다시 해 줘.';
+    confirmBox('로그인 실패', msg, '닫기', '확인', () => {});
+  }
+}
+async function logout() {
+  const pushed = cloud.ready ? await pushCloud() : false;
+  const uid = UID;
+  await cloud.api.authMod.signOut(cloud.api.auth);
+  if (pushed) lsDel(storeKey(uid));
+  S.tab = 'home';
+}
+async function deleteCloudData() {
+  const uid = UID;
+  try {
+    await cloud.api.deleteDoc(cloud.ref());
+    cloud.ready = false;
+    lsDel(storeKey(uid));
+    await cloud.api.authMod.signOut(cloud.api.auth);
+    lsDel(GUEST_OK);
+  } catch {
+    confirmBox('지우지 못했어', '인터넷 연결을 확인하고 다시 해 줘.', '닫기', '확인', () => {});
+  }
+}
+document.addEventListener('visibilitychange', async () => {
+  if (!UID || !cloud.ready) return;
+  if (document.visibilityState === 'hidden') return void pushCloud();
+  if (L || E || Date.now() - cloud.pulled < 30000) return;
+  try {
+    const remote = await pullCloud();
+    if (L || E) return;
+    const before = JSON.stringify(S);
+    S = mergeState(S, remote);
+    if (JSON.stringify(S) !== before) { lsSet(storeKey(), JSON.stringify(S)); if (!document.querySelector('.overlay')) renderApp(); }
+  } catch { /* 다음에 다시 받는다 */ }
+});
 
 /* ---------- 날짜 ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -805,19 +968,21 @@ const ICON = {
   check: '<path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>',
   lock: '<path d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z" fill="currentColor"/>',
   play: '<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5" fill="currentColor"/>',
+  user: '<path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9m0 2c-4.4 0-8 2.3-8 5.2V21h16v-1.8c0-2.9-3.6-5.2-8-5.2" fill="currentColor"/>',
   x: '<path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
 };
 const icon = n => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
-function chick(mood = 'idle') {
+function chick(mood = 'idle', color = S.profile?.color || 0) {
+  const [, body, wing, belly] = COLORS[color] || COLORS[0];
   const eyes = mood === 'happy'
     ? '<path d="M39 44q5-7 10 0M61 44q5-7 10 0" fill="none" stroke="#2b2100" stroke-width="4" stroke-linecap="round"/>'
     : mood === 'sad'
       ? '<circle cx="44" cy="45" r="4.5" fill="#2b2100"/><circle cx="66" cy="45" r="4.5" fill="#2b2100"/><path d="M37 39l11-5M73 39l-11-5" stroke="#2b2100" stroke-width="3.5" stroke-linecap="round"/>'
       : '<circle cx="44" cy="44" r="5" fill="#2b2100"/><circle cx="66" cy="44" r="5" fill="#2b2100"/><circle cx="46" cy="42" r="1.600" fill="#fff"/><circle cx="68" cy="42" r="1.600" fill="#fff"/>';
   const wings = mood === 'happy'
-    ? '<path d="M21 62q-14-8-11-22 11 4 18 15zM89 62q14-8 11-22-11 4-18 15z" fill="#f2b100"/>'
-    : '<path d="M20 60q-8 8-3 19 9-1 13-9zM90 60q8 8 3 19-9-1-13-9z" fill="#f2b100"/>';
-  return `<svg class="chick" viewBox="0 0 110 110" aria-hidden="true"><path d="M55 9q-3-7-8-5 3 3 2 7M57 9q4-7 9-4-4 3-4 7" fill="#f2b100"/>${wings}<path d="M42 96v8m-6 0h12M68 96v8m-6 0h12" stroke="#ef8a1d" stroke-width="4" stroke-linecap="round"/><ellipse cx="55" cy="56" rx="36" ry="43" fill="#ffc933"/><ellipse cx="55" cy="73" rx="22" ry="20" fill="#ffe08a"/>${eyes}<path d="M47 53q8-5 16 0-8 10-16 0" fill="#ef8a1d"/><circle cx="33" cy="56" r="5" fill="#ff9d7a" opacity=".6"/><circle cx="77" cy="56" r="5" fill="#ff9d7a" opacity=".6"/></svg>`;
+    ? `<path d="M21 62q-14-8-11-22 11 4 18 15zM89 62q14-8 11-22-11 4-18 15z" fill="${wing}"/>`
+    : `<path d="M20 60q-8 8-3 19 9-1 13-9zM90 60q8 8 3 19-9-1-13-9z" fill="${wing}"/>`;
+  return `<svg class="chick" viewBox="0 0 110 110" aria-hidden="true"><path d="M55 9q-3-7-8-5 3 3 2 7M57 9q4-7 9-4-4 3-4 7" fill="${wing}"/>${wings}<path d="M42 96v8m-6 0h12M68 96v8m-6 0h12" stroke="#ef8a1d" stroke-width="4" stroke-linecap="round"/><ellipse cx="55" cy="56" rx="36" ry="43" fill="${body}"/><ellipse cx="55" cy="73" rx="22" ry="20" fill="${belly}"/>${eyes}<path d="M47 53q8-5 16 0-8 10-16 0" fill="#ef8a1d"/><circle cx="33" cy="56" r="5" fill="#ff9d7a" opacity=".6"/><circle cx="77" cy="56" r="5" fill="#ff9d7a" opacity=".6"/></svg>`;
 }
 const KW = {
   python: 'def|return|if|elif|else|for|while|in|class|import|from|global|lambda|pass|break|continue|and|or|not|None|True|False|print',
@@ -859,9 +1024,10 @@ function dday() {
 function renderApp() {
   if (L) return renderLesson();
   if (E) return renderExam();
+  if (!UID && !lsGet(GUEST_OK)) return renderWelcome();
   const d = statsData();
-  const nav = [['home', '코스', 'home'], ['review', '복습', 'review'], ['mock', '모의고사', 'exam'], ['stats', '기록', 'chart']];
-  const view = { home: viewHome, review: viewReview, mock: viewMock, stats: viewStats, result: viewResult }[S.tab] || viewHome;
+  const nav = [['home', '코스', 'home'], ['review', '복습', 'review'], ['mock', '모의고사', 'exam'], ['stats', '기록', 'chart'], ['profile', '프로필', 'user']];
+  const view = { home: viewHome, review: viewReview, mock: viewMock, stats: viewStats, profile: viewProfile, result: viewResult }[S.tab] || viewHome;
   app().innerHTML = `<div class="shell">
     <nav class="side" aria-label="메뉴"><div class="logo">${chick('idle')}삐약코드</div>
       ${nav.map(([k, n, i]) => `<button class="nav ${S.tab === k ? 'on' : ''}" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${icon(i)}<span>${n}</span>${k === 'review' && d.due ? `<span class="badge">${d.due}</span>` : ''}</button>`).join('')}
@@ -879,7 +1045,8 @@ function renderApp() {
 }
 function panel(d) {
   const dd = dday();
-  return `<div class="card"><h3>${icon('flame')} 연속 학습</h3><div class="stat-big">${d.streak}일</div>
+  return `<button class="card me-card" data-tab="profile">${chick('idle')}<span><b>${esc(S.profile?.name || '손님')}</b><span class="note">${UID ? syncText() : '로그인하면 기기끼리 이어져'}</span></span></button>
+    <div class="card"><h3>${icon('flame')} 연속 학습</h3><div class="stat-big">${d.streak}일</div>
       <p class="note">${d.ok >= 3 ? '오늘 몫은 끝났어.' : `오늘 ${3 - d.ok}문제만 더 맞히면 이어져.`}</p></div>
     <div class="card"><h3>${icon('target')} 오늘 목표</h3><div class="bar" role="progressbar" aria-valuenow="${Math.min(d.todayXp, S.goal)}" aria-valuemax="${S.goal}"><i style="width:${Math.min(100, d.todayXp / S.goal * 100)}%"></i></div>
       <p class="note" style="margin-top:8px">${d.todayXp} / ${S.goal} XP</p></div>
@@ -923,6 +1090,38 @@ function viewMock() {
     <p class="note">실기는 2027년부터 필답형이야. 종이에 먼저 풀고 답만 입력하면 실제 시험과 가까워져. 실제 문항 수, 부분 점수 기준은 확인 못 했어.</p>
     <div class="section"><h2>지난 점수</h2>${hist.length ? `<div class="rows">${hist.map(m => `<div class="row"><span>${esc(m.d)} · ${esc(m.name)}</span><b class="${m.score >= 60 ? 'pass' : 'fail'}">${m.score}점</b></div>`).join('')}</div>` : '<p class="note">아직 없어. 40점이 55점 되는 걸 여기서 보게 될 거야.</p>'}</div>`;
 }
+const G_ICON = '<svg class="icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.700 1.200 9.200 3.600l6.800-6.800C35.900 2.400 30.5 0 24 0 14.600 0 6.5 5.400 2.600 13.200l7.900 6.200C12.400 13.700 17.700 9.5 24 9.5z"/><path fill="#4285F4" d="M46.100 24.5c0-1.600-.1-3.100-.4-4.5H24v9h12.400c-.5 2.900-2.200 5.300-4.600 7l7.200 5.600c4.200-3.900 7.100-9.600 7.100-17.100z"/><path fill="#FBBC05" d="M10.5 28.600A14.5 14.5 0 0 1 9.700 24c0-1.600.3-3.100.8-4.600l-7.900-6.200A24 24 0 0 0 0 24c0 3.900.9 7.5 2.600 10.800z"/><path fill="#34A853" d="M24 48c6.5 0 11.900-2.100 15.900-5.800l-7.200-5.600c-2 1.400-4.600 2.200-8.700 2.200-6.300 0-11.600-4.200-13.5-9.900l-7.900 6.100C6.5 42.600 14.600 48 24 48z"/></svg>';
+const googleBtn = () => `<button class="btn wide ghost google" data-act="login">${G_ICON}구글로 로그인</button>`;
+function syncText() {
+  if (cloud.status === 'ok' && cloud.at) return `저장됨 ${pad(cloud.at.getHours())}:${pad(cloud.at.getMinutes())}`;
+  if (cloud.status === 'fail') return '저장 못 함. 인터넷이 돌아오면 다시 올릴게.';
+  if (cloud.status === 'offline') return '서버에 연결 못 함. 이 기기에는 저장돼.';
+  return '동기화 중';
+}
+function renderWelcome() {
+  app().innerHTML = `<div class="lesson"><div class="l-body"><div class="done-page">${chick('happy')}<h1>삐약코드</h1>
+    <p class="muted">프로그래밍기능사, 하루 3문제부터.<br>로그인하면 폰과 PC에서 기록이 이어져.</p>
+    ${googleBtn()}<button class="link" data-act="guest">로그인 없이 써 보기</button></div></div></div>`;
+}
+function viewProfile(d) {
+  if (!UID) {
+    return `<h1 class="page-title">프로필</h1><div class="empty">${chick('idle')}<h2>지금은 손님이야</h2><p style="margin-bottom:16px">기록이 이 기기에만 남아. 로그인하면 지금까지 푼 기록도 내 계정으로 옮겨 줄게.</p>${googleBtn()}</div>`;
+  }
+  const done = LESSONS.filter(l => lessonDone(l.id)).length;
+  return `<h1 class="page-title">프로필</h1>
+    <div class="profile-head">${chick('happy')}<div class="profile-main"><label class="note" for="profileName">이름</label>
+      <input id="profileName" class="name-input" maxlength="20" value="${esc(S.profile?.name || '')}" autocomplete="off">
+      ${cloud.user?.email ? `<p class="note">${esc(cloud.user.email)}</p>` : ''}</div></div>
+    <div class="section"><h2>병아리 색</h2><div class="dots">${COLORS.map((c, i) => `<button class="dot ${(S.profile?.color || 0) === i ? 'on' : ''}" style="--c:${c[1]}" data-color="${i}" aria-label="${c[0]}" aria-pressed="${(S.profile?.color || 0) === i}"></button>`).join('')}</div></div>
+    <div class="section"><h2>내 기록</h2><div class="rows">
+      <div class="row"><span>누적 XP</span><b>${d.xp}</b></div>
+      <div class="row"><span>연속 학습</span><b>${d.streak}일</b></div>
+      <div class="row"><span>끝낸 레슨</span><b>${done} / ${LESSONS.length}</b></div>
+      <div class="row"><span>동기화</span><span id="syncStatus">${syncText()}</span></div></div></div>
+    <div class="section"><button class="btn wide ghost" data-act="logout">로그아웃</button>
+      <p style="text-align:center;margin-top:12px"><button class="link" data-act="del-cloud">내 기록을 서버에서 지우기</button></p>
+      <p class="note">서버에는 이름과 학습 기록만 저장돼. 이메일은 로그인 정보로만 쓰여.</p></div>`;
+}
 function viewStats(d) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(today(), i - 6));
   const max = Math.max(S.goal, ...days.map(x => dayOf(x).xp));
@@ -938,7 +1137,7 @@ function viewStats(d) {
     ['1월', '접수하고 필기 모의고사 반복', mon === 1],
     ['필기 후', 'Linux, 실기 필답 연습', mon >= 2 && mon <= 4],
   ];
-  return `<h1 class="page-title">기록</h1><p class="page-sub">이 기기의 브라우저에 저장돼. 폰과 PC 기록은 따로야.</p>
+  return `<h1 class="page-title">기록</h1><p class="page-sub">${UID ? '내 계정에 저장돼서 폰과 PC에서 이어져.' : '이 기기의 브라우저에만 저장돼. 프로필 탭에서 로그인하면 폰과 PC에서 이어져.'}</p>
     <div class="card"><h3>최근 7일 XP</h3><div class="week">${days.map(x => { const v = dayOf(x).xp; return `<div class="${v ? '' : 'zero'}"><span>${v || ''}</span><i style="height:${Math.max(3, v / max * 80)}px"></i><span>${Number(x.slice(8))}일</span></div>`; }).join('')}</div></div>
     <div class="section"><h2>과목별로 익힌 문제</h2>${subj}<p class="note">두 번 이상 연달아 맞힌 문제만 세.</p></div>
     <div class="section"><h2>코스 순서</h2><div class="rows">${plan.map(p => `<div class="row ${p[2] ? 'now' : ''}"><b>${p[0]}</b><span style="text-align:right">${p[1]}</span></div>`).join('')}</div>
@@ -1287,7 +1486,7 @@ function viewResult() {
 
 /* ---------- 입력 ---------- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-lesson],[data-start],[data-tip],[data-act],[data-opt],[data-pick],[data-unpick],[data-m],[data-mock],[data-eopt],[data-goto],[data-goal],[data-sound]');
+  const t = e.target.closest('[data-tab],[data-lesson],[data-start],[data-tip],[data-act],[data-opt],[data-pick],[data-unpick],[data-m],[data-mock],[data-eopt],[data-goto],[data-goal],[data-sound],[data-color]');
   if (!t) {
     if (e.target.matches('.overlay[data-close]')) closeSheet();
     return;
@@ -1298,8 +1497,9 @@ document.addEventListener('click', e => {
   if (d.tip) return openSheet({ kind: 'tip', id: d.tip });
   if (d.start) { const l = LESSONS.find(x => x.id === d.start); startSession('lesson', pickFor(l, LESSON_LEN), l); if (sheetTipSeen(d.start)) { L.showTip = false; renderLesson(); } return; }
   if (d.mock) return startMock(d.mock);
-  if (d.goal) { S.goal = Number(d.goal); save(); return renderApp(); }
-  if (d.sound) { S.sound = d.sound === '1'; save(); return renderApp(); }
+  if (d.color !== undefined) { S.profile = { ...S.profile, color: Number(d.color) }; stamp(); save(); return renderApp(); }
+  if (d.goal) { S.goal = Number(d.goal); stamp(); save(); return renderApp(); }
+  if (d.sound) { S.sound = d.sound === '1'; stamp(); save(); return renderApp(); }
   if (d.opt !== undefined) { if (L.st === 'ask') { L.sel = Number(d.opt); renderLesson(); } return; }
   if (d.pick !== undefined) { L.chosen.push(Number(d.pick)); return renderLesson(); }
   if (d.unpick !== undefined) { L.chosen.splice(Number(d.unpick), 1); return renderLesson(); }
@@ -1307,7 +1507,10 @@ document.addEventListener('click', e => {
   if (d.eopt !== undefined) { E.ans[E.i] = Number(d.eopt); return renderExam(); }
   if (d.goto !== undefined) { E.i = Number(d.goto); closeSheet(); return renderExam(); }
   const acts = {
-    quick, check,
+    quick, check, login,
+    guest() { lsSet(GUEST_OK, '1'); renderApp(); },
+    logout() { lsDel(GUEST_OK); logout(); },
+    'del-cloud'() { confirmBox('서버 기록을 지울까?', '이 계정의 프로필과 학습 기록이 모두 지워지고 되돌릴 수 없어.', '전부 지우기', '취소', deleteCloudData); },
     review() { startSession('review', dueQs().slice(0, 10), null); },
     next: nextQ,
     override,
@@ -1333,7 +1536,7 @@ document.addEventListener('click', e => {
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     },
     import() { document.getElementById('importFile').click(); },
-    reset() { confirmBox('처음부터 다시 할까?', '모든 기록이 지워지고 되돌릴 수 없어. 필요하면 먼저 내보내기를 해 둬.', '전부 지우기', '취소', () => { S = { ...DEF, days: {}, l: {}, q: {}, mocks: [] }; save(); renderApp(); }); },
+    reset() { confirmBox('처음부터 다시 할까?', '모든 기록이 지워지고 되돌릴 수 없어. 필요하면 먼저 내보내기를 해 둬.', '전부 지우기', '취소', () => { S = { ...DEF, days: {}, l: {}, q: {}, mocks: [], profile: S.profile, resetAt: Date.now(), setAt: Date.now() }; save(); renderApp(); }); },
   };
   acts[d.act]?.();
 });
@@ -1352,12 +1555,13 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'examDate') { S.exam = e.target.value; save(); renderApp(); }
+  if (e.target.id === 'profileName') { S.profile = { ...S.profile, name: e.target.value.trim() }; stamp(); save(); renderApp(); }
+  if (e.target.id === 'examDate') { S.exam = e.target.value; stamp(); save(); renderApp(); }
   if (e.target.id === 'importFile' && e.target.files[0]) {
     e.target.files[0].text().then(txt => {
       const o = JSON.parse(txt);
       if (typeof o.xp !== 'number' || typeof o.days !== 'object') throw new Error('형식 오류');
-      S = { ...DEF, ...o }; save(); renderApp();
+      S = { ...DEF, ...o, resetAt: Date.now(), setAt: Date.now() }; save(); renderApp();
     }).catch(() => confirmBox('불러오지 못했어', '이 앱에서 내보낸 파일이 맞는지 확인해 줘.', '닫기', '확인', () => {}));
   }
 });
@@ -1394,8 +1598,10 @@ document.addEventListener('keydown', e => {
   }
 });
 window.addEventListener('beforeunload', e => { if (E) e.preventDefault(); });
+window.addEventListener('online', () => { if (UID && cloud.ready) pushCloud(); });
 
 renderApp();
+initCloud();
 
 </script>
 </body>

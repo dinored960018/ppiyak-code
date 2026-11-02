@@ -5,3 +5,5 @@
 문제는 공단 예시문제의 유형을 참고해 새로 쓴 연습문제이며 기출문제가 아니다.
 
 수정 후 `node src/build.js` 로 `index.html` 을 다시 만든다. `node src/verify.js` 는 실행 가능한 문제의 정답을 확인한다.
+
+로그인과 기록 동기화는 Firebase(구글 로그인, Firestore)를 쓴다. 코드에 있는 `FB` 설정값은 웹 앱 공개 설정이고, 접근은 Firestore 보안 규칙으로 막는다. 각 사용자는 `users/{uid}` 문서만 읽고 쓸 수 있다.
