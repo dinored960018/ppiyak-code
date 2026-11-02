@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>삐약코드</title>
+<meta name="description" content="프로그래밍기능사 필기·실기를 게임처럼 공부하는 개인 학습 앱">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 110'><ellipse cx='55' cy='56' rx='36' ry='43' fill='%23ffc933'/><circle cx='44' cy='44' r='5' fill='%232b2100'/><circle cx='66' cy='44' r='5' fill='%232b2100'/><path d='M47 53q8-5 16 0-8 10-16 0' fill='%23ef8a1d'/></svg>">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ffffff; --surface: #f5f6f8; --surface-2: #eceef2; --line: #dfe2e8; --ink: #1b2230; --muted: #626c7e;
+  --brand: #ffc933; --brand-dark: #d8a300; --brand-ink: #2b2100;
+  --ok: #17924e; --ok-dark: #0f7039; --ok-bg: #e4f7eb; --no: #d62c3b; --no-dark: #a81c2a; --no-bg: #fdebed;
+  --code-bg: #171c27; --code-ink: #e6e9f0; --code-num: #66708a; --c-key: #ff9d6e; --c-str: #9ae28e; --c-com: #7e8aa3; --c-num: #ffd666;
+  --blue: #2c7be0; --blue-d: #1c5cae; --orange: #ee7426; --orange-d: #bf5512; --teal: #0d9e9e; --teal-d: #087878;
+  --slate: #4a5972; --slate-d: #333f55; --violet: #7857e0; --violet-d: #5a3db8; --rose: #e04f7d; --rose-d: #b23660;
+  --ease: cubic-bezier(.23, 1, .32, 1);
+  --mono: "Cascadia Code", "D2Coding", Consolas, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #12161f; --surface: #1b2130; --surface-2: #252c3d; --line: #2f3749; --ink: #eef0f5; --muted: #a0a9ba;
+  --ok-bg: #12331f; --no-bg: #3a161b; --ok: #3ccb7a; --no: #ff6b78; --ok-dark: #1f9d55; --no-dark: #b92b38;
+  --code-bg: #0b0e15;
+} }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12161f; --surface: #1b2130; --surface-2: #252c3d; --line: #2f3749; --ink: #eef0f5; --muted: #a0a9ba;
+  --ok-bg: #12331f; --no-bg: #3a161b; --ok: #3ccb7a; --no: #ff6b78; --ok-dark: #1f9d55; --no-dark: #b92b38;
+  --code-bg: #0b0e15;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; font-size: 16px; line-height: 1.55; word-break: keep-all; overflow-wrap: anywhere; -webkit-tap-highlight-color: transparent; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; touch-action: manipulation; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+code { font-family: var(--mono); font-size: .9em; background: var(--surface-2); padding: .1em .35em; border-radius: 5px; }
+.icon { width: 1.25em; height: 1.25em; display: inline-block; vertical-align: -.25em; flex: none; }
+
+/* 공통 버튼: 두께가 있고 누르면 내려간다 */
+.btn { --c: var(--brand); --d: var(--brand-dark); --t: var(--brand-ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 22px; border-radius: 14px; font-weight: 800; background: var(--c); color: var(--t); box-shadow: 0 4px 0 var(--d); transition: transform 90ms var(--ease), box-shadow 90ms var(--ease), filter 120ms ease; }
+.btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 var(--d); }
+.btn:disabled { --c: var(--surface-2); --d: var(--line); --t: var(--muted); cursor: default; }
+.btn.ok { --c: var(--ok-dark); --d: #0a5229; --t: #fff; }
+.btn.no { --c: var(--no-dark); --d: #7e1420; --t: #fff; }
+.btn.ghost { --c: var(--bg); --d: var(--line); --t: var(--ink); border: 2px solid var(--line); }
+.btn.wide { width: 100%; }
+.btn.small { min-height: 40px; padding: 0 14px; font-size: 14px; border-radius: 11px; box-shadow: 0 3px 0 var(--d); }
+.link { color: var(--muted); font-weight: 700; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; padding: 6px; }
+@media (hover: hover) and (pointer: fine) { .btn:hover:not(:disabled) { filter: brightness(1.04); } .link:hover { color: var(--ink); } }
+
+/* 앱 뼈대 */
+.shell { display: grid; grid-template-columns: 1fr; min-height: 100dvh; padding-bottom: 72px; }
+.side { position: fixed; inset: auto 0 0 0; z-index: 20; background: var(--bg); border-top: 2px solid var(--line); display: flex; justify-content: space-around; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+.logo { display: none; }
+.nav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px; border-radius: 12px; color: var(--muted); font-size: 12px; font-weight: 700; position: relative; }
+.nav.on { color: var(--ink); background: var(--surface); }
+.nav .icon { width: 24px; height: 24px; }
+.badge { position: absolute; top: 1px; left: 56%; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--no-dark); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+.main { min-width: 0; width: 100%; max-width: 620px; margin: 0 auto; padding: 16px 16px 40px; }
+.panel { display: none; }
+.top-stats { display: flex; gap: 8px; margin-bottom: 18px; position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 0; }
+.chip { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 800; font-size: 14px; padding: 7px 4px; border-radius: 11px; background: var(--surface); white-space: nowrap; }
+.chip.flame { color: var(--orange-d); }
+.chip.bolt { color: var(--brand-dark); }
+.chip.target { color: var(--teal-d); }
+.chip .muted { font-weight: 600; }
+.muted { color: var(--muted); }
+@media (prefers-color-scheme: dark) { .chip.flame { color: var(--orange); } .chip.target { color: var(--teal); } }
+
+@media (min-width: 900px) {
+  .shell { grid-template-columns: 232px minmax(0, 1fr); padding-bottom: 0; }
+  .side { position: sticky; inset: 0 auto auto 0; top: 0; height: 100dvh; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 20px 14px; border-top: 0; border-right: 2px solid var(--line); }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 21px; padding: 2px 8px 18px; letter-spacing: -.02em; }
+  .logo svg { width: 38px; height: 38px; }
+  .nav { flex: none; flex-direction: row; gap: 12px; padding: 12px 14px; font-size: 15px; }
+  .badge { position: static; margin-left: auto; }
+  .top-stats { display: none; }
+  .main { padding-top: 28px; }
+}
+@media (min-width: 1160px) {
+  .shell { grid-template-columns: 232px minmax(0, 1fr) 320px; }
+  .panel { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 0; height: 100dvh; overflow: auto; padding: 28px 24px 24px 0; }
+}
+@media (min-width: 900px) and (max-width: 1159px) { .top-stats { display: flex; } }
+
+.card { border: 2px solid var(--line); border-radius: 16px; padding: 16px; background: var(--bg); }
+.card h3 { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.stat-big { font-size: 28px; font-weight: 900; line-height: 1.2; letter-spacing: -.02em; }
+.bar { height: 12px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 6px; background: var(--brand); transition: width 280ms var(--ease); }
+.nudge { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--surface); margin-bottom: 26px; }
+.nudge .chick { width: 54px; height: 54px; flex: none; }
+.nudge b { display: block; font-size: 15px; }
+.nudge span { font-size: 13px; color: var(--muted); }
+.nudge .btn { margin-left: auto; flex: none; }
+
+/* 코스 지도 */
+.unit { margin-bottom: 30px; }
+.unit-head { color: #fff; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--u); box-shadow: 0 4px 0 var(--ud); }
+.unit-head h2 { font-size: 19px; font-weight: 900; }
+.unit-head p { font-size: 13px; opacity: .92; }
+.unit-head b { font-size: 14px; white-space: nowrap; }
+.path { display: flex; flex-direction: column; align-items: center; gap: 30px; padding: 30px 0 6px; }
+.u-blue { --u: var(--blue); --ud: var(--blue-d); } .u-orange { --u: var(--orange); --ud: var(--orange-d); } .u-teal { --u: var(--teal); --ud: var(--teal-d); }
+.u-slate { --u: var(--slate); --ud: var(--slate-d); } .u-violet { --u: var(--violet); --ud: var(--violet-d); } .u-rose { --u: var(--rose); --ud: var(--rose-d); }
+.node-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 150px; position: relative; }
+.node { width: 74px; height: 66px; border-radius: 50%; background: var(--u); box-shadow: 0 7px 0 var(--ud); color: #fff; display: grid; place-items: center; transition: transform 90ms var(--ease), box-shadow 90ms var(--ease); margin-bottom: 7px; }
+.node .icon { width: 30px; height: 30px; }
+.node:active { transform: translateY(6px); box-shadow: 0 1px 0 var(--ud); }
+.node.locked { background: var(--surface-2); box-shadow: 0 7px 0 var(--line); color: var(--muted); }
+.node.current { outline: 5px solid color-mix(in srgb, var(--u) 28%, transparent); outline-offset: 5px; }
+.node-name { font-size: 13px; font-weight: 700; text-align: center; line-height: 1.3; }
+.node-name.locked { color: var(--muted); font-weight: 600; }
+.stars { display: flex; gap: 1px; color: var(--brand-dark); height: 16px; margin-top: 4px; }
+.stars .icon { width: 14px; height: 14px; }
+.stars .off { color: var(--line); }
+.start-tag { position: absolute; top: -24px; background: var(--ink); color: var(--bg); padding: 2px 10px; font-size: 12px; font-weight: 800; border-radius: 8px; animation: bob 2.2s ease-in-out infinite; z-index: 1; }
+.start-tag::after { content: ""; position: absolute; left: 50%; bottom: -4px; width: 9px; height: 9px; background: var(--ink); transform: translateX(-50%) rotate(45deg); }
+@keyframes bob { 50% { transform: translateY(-4px); } }
+
+/* 시트 */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgb(10 14 22 / .5); display: flex; align-items: flex-end; justify-content: center; animation: fade 160ms ease-out; }
+.sheet { width: 100%; max-width: 480px; max-height: 88dvh; overflow: auto; background: var(--bg); border-radius: 22px 22px 0 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); animation: rise 240ms var(--ease); }
+.sheet h2 { font-size: 21px; font-weight: 900; }
+.sheet .btn + .btn { margin-top: 12px; }
+@media (min-width: 620px) { .overlay { align-items: center; padding: 20px; } .sheet { border-radius: 22px; animation: pop 200ms var(--ease); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
+@keyframes pop { from { transform: scale(.96); opacity: 0; } }
+.tip-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.tip-list li { background: var(--surface); padding: 11px 13px; border-radius: 12px; font-size: 15px; }
+
+/* 레슨 */
+.lesson { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: flex; flex-direction: column; height: 100dvh; }
+.l-top { flex: none; display: flex; align-items: center; gap: 12px; width: 100%; max-width: 760px; margin: 0 auto; padding: 14px 16px; }
+.x { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; color: var(--muted); flex: none; }
+.x:active { background: var(--surface); }
+.l-top .bar { flex: 1; height: 16px; border-radius: 8px; }
+.l-top .bar > i { background: var(--ok); border-radius: 8px; }
+.hearts { display: flex; align-items: center; gap: 4px; font-weight: 800; color: var(--no); flex: none; }
+.hearts.hit { animation: thump 260ms var(--ease); }
+@keyframes thump { 40% { transform: scale(1.3); } }
+.l-body { flex: 1; overflow: auto; min-height: 0; }
+.l-inner { width: 100%; max-width: 680px; margin: 0 auto; padding: 8px 16px 24px; }
+.l-inner.enter { animation: slide 220ms var(--ease); }
+@keyframes slide { from { transform: translateX(14px); opacity: 0; } }
+.q-tag { font-size: 13px; font-weight: 800; color: var(--muted); margin-bottom: 6px; }
+.q-text { font-size: 20px; font-weight: 800; line-height: 1.45; margin-bottom: 14px; }
+.opts { display: grid; gap: 10px; margin-top: 14px; }
+.opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 14px; font-weight: 600; background: var(--bg); transition: transform 90ms var(--ease), background-color 120ms ease, border-color 120ms ease; }
+.opt:active:not(:disabled) { transform: translateY(2px); }
+.opt .n { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border: 2px solid var(--line); border-radius: 8px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.opt.sel { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, var(--bg)); }
+.opt.sel .n { border-color: var(--blue); color: var(--blue); }
+.opt.right { border-color: var(--ok); background: var(--ok-bg); }
+.opt.right .n { border-color: var(--ok); color: var(--ok); }
+.opt.wrong { border-color: var(--no); background: var(--no-bg); }
+.opt.wrong .n { border-color: var(--no); color: var(--no); }
+.opt:disabled { cursor: default; }
+@media (hover: hover) and (pointer: fine) { .opt:hover:not(:disabled):not(.sel) { background: var(--surface); } }
+
+/* 코드 */
+.code { background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 12px 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; overflow-x: auto; margin: 0 0 12px; }
+.code .ln { display: flex; min-width: max-content; padding-right: 16px; }
+.code .no { flex: none; width: 34px; padding-right: 10px; text-align: right; color: var(--code-num); user-select: none; }
+.code .tx { white-space: pre; }
+.t-k { color: var(--c-key); font-weight: 600; } .t-s { color: var(--c-str); } .t-c { color: var(--c-com); font-style: italic; } .t-n { color: var(--c-num); }
+.blank { background: var(--brand); color: var(--brand-ink); padding: 0 4px; border-radius: 4px; font-weight: 800; }
+.tbs { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.tb { border-collapse: collapse; font-size: 14px; }
+.tb caption { text-align: left; font-weight: 800; font-size: 13px; color: var(--muted); padding-bottom: 3px; font-family: var(--mono); }
+.tb th, .tb td { border: 1.5px solid var(--line); padding: 3px 10px; text-align: left; }
+.tb th { background: var(--surface); font-family: var(--mono); font-size: 13px; }
+.tb .null { color: var(--muted); font-style: italic; }
+.answer { width: 100%; height: 56px; padding: 0 16px; border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 14px; background: var(--bg); font-family: var(--mono); font-size: 18px; font-weight: 600; outline: 0; transition: border-color 120ms ease; }
+.answer:focus { border-color: var(--blue); }
+.answer.right { border-color: var(--ok); background: var(--ok-bg); }
+.answer.wrong { border-color: var(--no); background: var(--no-bg); }
+.hint-line { font-size: 13px; color: var(--muted); margin-top: 8px; }
+@media (hover: none) { .hint-line { display: none; } }
+
+/* 배열 */
+.slot { min-height: 62px; padding: 8px; border: 2px dashed var(--line); border-radius: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; margin-bottom: 14px; }
+.bank { display: flex; flex-wrap: wrap; gap: 8px; }
+.tok { padding: 8px 13px; border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 11px; font-family: var(--mono); font-size: 15px; font-weight: 600; background: var(--bg); transition: transform 90ms var(--ease); }
+.tok:active { transform: translateY(2px); }
+.tok.used { visibility: hidden; }
+/* 짝맞추기 */
+.pairs { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 10px; }
+.col { display: grid; gap: 10px; align-content: start; }
+.pr { min-height: 54px; padding: 8px 10px; border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 13px; font-weight: 700; font-size: 14.5px; background: var(--bg); text-align: center; transition: transform 90ms var(--ease), opacity 180ms ease; }
+.pr.key { font-family: var(--mono); }
+.pr:active:not(:disabled) { transform: translateY(2px); }
+.pr.sel { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, var(--bg)); }
+.pr.done { border-color: var(--ok); background: var(--ok-bg); opacity: .55; cursor: default; }
+.pr.bad, .shake { animation: shake 300ms ease; }
+.pr.bad { border-color: var(--no); background: var(--no-bg); }
+@keyframes shake { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+
+/* 하단 */
+.l-foot { flex: none; border-top: 2px solid var(--line); background: var(--bg); padding-bottom: env(safe-area-inset-bottom); }
+.l-foot.right { background: var(--ok-bg); border-color: transparent; }
+.l-foot.wrong { background: var(--no-bg); border-color: transparent; }
+.l-foot.fb { animation: rise 220ms var(--ease); }
+.foot-in { width: 100%; max-width: 680px; margin: 0 auto; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.fb-head { display: flex; gap: 10px; align-items: flex-start; }
+.fb-head .chick { width: 46px; height: 46px; flex: none; }
+.fb-title { font-size: 18px; font-weight: 900; }
+.right .fb-title { color: var(--ok); } .wrong .fb-title { color: var(--no); }
+.fb-text { font-size: 14.5px; max-height: 26dvh; overflow: auto; }
+.fb-ans { font-weight: 800; }
+.fb-ans code { background: transparent; padding: 0; font-weight: 800; }
+.foot-row { display: flex; gap: 10px; align-items: center; }
+.foot-row .btn { flex: 1; }
+.foot-row .link { flex: none; }
+.tip-page { text-align: left; }
+.tip-page .chick { width: 90px; height: 90px; display: block; margin: 6px 0 8px; }
+.tip-page h2 { font-size: 24px; font-weight: 900; }
+
+/* 결과 */
+.done-page { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 24px 16px; max-width: 480px; margin: 0 auto; }
+.done-page .chick { width: 130px; height: 130px; }
+.done-page h1 { font-size: 28px; font-weight: 900; letter-spacing: -.02em; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin: 8px 0; }
+.tile { border: 2px solid var(--t); border-radius: 14px; overflow: hidden; }
+.tile b { display: block; background: var(--t); color: #fff; font-size: 12px; padding: 3px 0; }
+.tile span { display: block; font-size: 20px; font-weight: 900; padding: 8px 0; }
+.conf { position: fixed; top: -14px; width: 10px; height: 14px; border-radius: 2px; pointer-events: none; z-index: 60; animation: fall var(--d) linear forwards; }
+@keyframes fall { to { transform: translate(var(--x), 110dvh) rotate(var(--r)); opacity: .8; } }
+
+/* 시험 */
+.exam-timer { font-family: var(--mono); font-weight: 800; font-variant-numeric: tabular-nums; flex: none; }
+.exam-timer.low { color: var(--no); }
+.grid-nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 7px; margin: 14px 0; }
+.grid-nav button { height: 40px; border-radius: 9px; border: 2px solid var(--line); font-size: 13px; font-weight: 700; }
+.grid-nav .ans { background: var(--surface-2); }
+.grid-nav .cur { border-color: var(--blue); }
+.mock-card { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.mock-card > div { flex: 1; min-width: 0; }
+.mock-card h3 { margin: 0; font-size: 17px; }
+.mock-card p { font-size: 13px; color: var(--muted); }
+.page-title { font-size: 24px; font-weight: 900; letter-spacing: -.02em; margin-bottom: 4px; }
+.page-sub { color: var(--muted); font-size: 14.5px; margin-bottom: 18px; }
+.section { margin-top: 26px; }
+.section > h2 { font-size: 17px; font-weight: 900; margin-bottom: 10px; }
+.rows { display: grid; gap: 8px; }
+.row { display: flex; align-items: center; gap: 10px; justify-content: space-between; font-size: 14.5px; padding: 10px 12px; border-radius: 11px; background: var(--surface); }
+.row b { white-space: nowrap; }
+.row.now { outline: 2px solid var(--brand-dark); outline-offset: -2px; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 120px; }
+.week div { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 3px; font-size: 11px; color: var(--muted); }
+.week i { display: block; width: 100%; max-width: 30px; background: var(--brand); border-radius: 5px 5px 2px 2px; min-height: 3px; }
+.week .zero i { background: var(--surface-2); }
+.sbj { margin-bottom: 12px; }
+.sbj-top { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button { padding: 7px 13px; border-radius: 10px; border: 2px solid var(--line); font-weight: 700; font-size: 14px; }
+.seg .on { border-color: var(--ink); background: var(--surface); }
+input[type="date"] { padding: 9px 11px; border: 2px solid var(--line); border-radius: 11px; background: var(--bg); max-width: 100%; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.note + .note { margin-top: 6px; }
+.review-item { border: 2px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; font-size: 14.5px; }
+.review-item .code { font-size: 13px; margin: 8px 0; }
+.empty { text-align: center; padding: 36px 14px; }
+.empty .chick { width: 110px; height: 110px; margin-bottom: 8px; }
+.empty p { color: var(--muted); }
+.chick { display: inline-block; }
+.pass { color: var(--ok); } .fail { color: var(--no); }
+.result-top { text-align: center; padding: 14px 0 6px; }
+.result-top .chick { width: 110px; height: 110px; }
+.result-score { font-size: 54px; font-weight: 900; line-height: 1.1; letter-spacing: -.03em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  .conf { display: none; }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// 문제은행. 공단 예시문제의 "유형"만 참고해 새로 쓴 연습문제다. 기출이 아니다.
+const M = (q, o, a, e, x = {}) => ({ k: 'mc', q, o, a, e, ...x });
+const I = (q, a, e, x = {}) => ({ k: 'in', q, a: [].concat(a), e, ...x });
+const O = (q, a, extra, e) => ({ k: 'ord', q, a, extra, e });
+const P = (q, pairs, e) => ({ k: 'match', q, pairs, e });
+const F = (q, a, e, c, lang) => I(q, a, e, { c, lang, ci: 1 });
+const OUT = '실행 결과를 쓰시오.';
+const py = (c, a, e) => I(OUT, a, e, { c, lang: 'python', run: 1 });
+const pym = (c, o, a, e) => M('실행 결과는?', o, a, e, { c, lang: 'python', run: 1 });
+const jv = (c, a, e) => I(OUT, a, e, { c, lang: 'java' });
+const jvm = (c, o, a, e) => M('실행 결과는?', o, a, e, { c, lang: 'java' });
+const cc = (c, a, e) => I(OUT, a, e, { c, lang: 'c' });
+const js = (c, a, e) => I(OUT, a, e, { c, lang: 'js', run: 1 });
+const sq = (c, a, e, tb) => I('쿼리 결과를 쓰시오.', a, e, { c, lang: 'sql', tb, run: 1 });
+
+const EMP = [{ n: 'emp', h: ['id', 'name', 'dept', 'sal'], r: [[1, '김하나', '개발', 300], [2, '박두리', '개발', 400], [3, '이세나', '영업', 250], [4, '박넷', '인사', 200], [5, '최다섯', '영업', null]] }];
+const T12 = [
+  { n: 't1', h: ['k', 'v'], r: [['A', 1], ['B', 4], ['C', 2], ['E', 8]] },
+  { n: 't2', h: ['k', 'v'], r: [['A', 9], ['C', 3], ['D', 5], ['F', 7]] },
+];
+
+const UNITS = [
+{ id: 'py', name: 'Python', sub: '실행 결과를 눈으로 따라가기', color: 'blue', subj: 'lang', lessons: [
+  { id: 'py1', name: '출력과 연산', tip: ['`/` 는 실수 나눗셈, `//` 는 몫, `%` 는 나머지, `**` 는 거듭제곱이야.', '문자열끼리 `+` 는 이어 붙이기, `*` 는 반복이야.', '`a, b = b, a+b` 는 오른쪽을 먼저 다 계산하고 한꺼번에 넣어.'], qs: [
+    pym('print(7 // 2)', ['3', '3.5', '4', '1'], 0, '`//` 는 몫만 남겨. 7 ÷ 2 의 몫은 3이야.'),
+    py('print(7 % 3)', '1', '`%` 는 나머지야. 7 = 3×2 + 1.'),
+    py('print(2 ** 5)', '32', '2를 5번 곱하면 32.'),
+    pym('print(10 / 4)', ['2', '2.5', '2.0', '3'], 1, '`/` 는 항상 실수 결과를 내.'),
+    py('a = 3\nb = a + 2\na = b * 2\nprint(a, b)', '10 5', 'b는 5, a는 5×2 = 10. print는 쉼표 사이에 공백을 넣어.'),
+    pym('print("3" + "4")', ['7', '34', '12', '오류'], 1, '문자열 더하기는 이어 붙이기야.'),
+    py('print("ab" * 3)', 'ababab', '문자열 × 숫자는 반복이야.'),
+    py('a, b = 1, 2\na, b = b, a + b\nprint(a, b)', '2 3', '오른쪽(2, 1+2)을 먼저 계산하고 한꺼번에 넣어.'),
+    pym('print(type(3.0))', ["<class 'float'>", "<class 'int'>", "<class 'str'>", "<class 'num'>"], 0, '소수점이 있으면 float야.'),
+    py('print(1, 2, sep="-")', '1-2', '`sep` 은 값 사이에 넣을 글자야.'),
+    py('print(int("12") + 1)', '13', '`int()` 가 문자열을 숫자로 바꿔.'),
+    pym('print(3 == 3.0)', ['True', 'False', '오류', 'None'], 0, '값이 같으면 True야. int와 float도 값으로 비교해.'),
+  ]},
+  { id: 'py2', name: '문자열과 슬라이싱', tip: ['인덱스는 0부터 세고, `-1` 은 맨 뒤 글자야.', '`s[a:b]` 는 a부터 b 바로 앞까지. b는 포함 안 돼.', '`s[::-1]` 은 뒤집기, `s[::2]` 는 두 칸씩이야.'], qs: [
+    py('s = "PYTHON"\nprint(s[1])', 'Y', '인덱스는 0부터. P가 0, Y가 1.'),
+    py('s = "PYTHON"\nprint(s[-1])', 'N', '-1은 맨 뒤 글자야.'),
+    py('s = "PYTHON"\nprint(s[1:4])', 'YTH', '1, 2, 3번 글자. 4는 포함 안 돼.'),
+    py('s = "PYTHON"\nprint(s[::-1])', 'NOHTYP', '`[::-1]` 은 뒤집기야.'),
+    py('s = "PYTHON"\nprint(s[::2])', 'PTO', '0, 2, 4번 글자를 가져와.'),
+    pym('print(len("hello world"))', ['10', '11', '12', '5'], 1, '공백도 한 글자야.'),
+    py('print("a,b,c".split(",")[1])', 'b', '쉼표로 나누면 ["a", "b", "c"], 그중 1번.'),
+    py('print("-".join(["x", "y", "z"]))', 'x-y-z', '`join` 은 앞 문자열을 사이에 끼워 합쳐.'),
+    py('print("hello".replace("l", "L"))', 'heLLo', '`replace` 는 해당하는 글자를 전부 바꿔.'),
+    py('print("Hello".upper())', 'HELLO', '`upper` 는 전부 대문자로.'),
+    pym('print("abc".find("c"))', ['2', '3', '1', '-1'], 0, 'c의 위치는 2. 없으면 -1을 돌려줘.'),
+    py('n = 3\nprint(f"n={n*2}")', 'n=6', 'f-string의 중괄호 안은 계산돼.'),
+  ]},
+  { id: 'py3', name: '리스트와 튜플', tip: ['`append` 는 맨 뒤 추가, `insert(i, x)` 는 i 자리에 추가, `pop()` 은 맨 뒤 꺼내기야.', '`b = a` 는 같은 리스트를 가리켜. 복사하려면 `a[:]`.', '튜플 `(1, 2)` 은 값을 못 바꿔.'], qs: [
+    py('a = [1, 2, 3]\na.append(4)\nprint(len(a))', '4', '맨 뒤에 하나 추가돼서 4개.'),
+    py('a = [1, 2, 3]\na.insert(1, 9)\nprint(a)', '[1, 9, 2, 3]', '1번 자리에 9가 끼어들어.'),
+    py('a = [5, 3, 8]\na.sort()\nprint(a[0])', '3', '정렬하면 [3, 5, 8].'),
+    py('a = [1, 2, 3, 4]\nprint(a[1:3])', '[2, 3]', '1번, 2번 원소야.'),
+    pym('a = [1, 2, 3]\nb = a\nb[0] = 9\nprint(a[0])', ['9', '1', '2', '오류'], 0, 'b와 a는 같은 리스트야. b를 바꾸면 a도 바뀌어.'),
+    pym('a = [1, 2]\nb = a[:]\nb[0] = 9\nprint(a[0])', ['1', '9', '2', '오류'], 0, '`a[:]` 는 복사본이라 a는 그대로야.'),
+    py('a = [3, 1, 2]\na.pop()\nprint(a)', '[3, 1]', '`pop()` 은 맨 뒤를 꺼내.'),
+    py('a = [1, 2, 3]\na.remove(2)\nprint(a)', '[1, 3]', '`remove` 는 값 2를 찾아 지워. 인덱스가 아니야.'),
+    py('print(sum([1, 2, 3]), max([1, 2, 3]))', '6 3', '합 6, 최댓값 3.'),
+    M('다음 코드를 실행하면?', ['TypeError가 난다', '(3, 2)가 된다', '(1, 3)이 된다', '아무 일도 없다'], 0, '튜플은 값을 바꿀 수 없어.', { c: 't = (1, 2)\nt[0] = 3', lang: 'python' }),
+    py('print([1, 2] + [3])', '[1, 2, 3]', '리스트 `+` 는 이어 붙이기야.'),
+    py('print(sorted([3, 1, 2], reverse=True))', '[3, 2, 1]', '`reverse=True` 면 내림차순.'),
+    F('결과가 `[1, 2, 3]` 이 되도록 빈칸에 알맞은 메소드를 쓰시오.', 'append', '맨 뒤 추가는 `append`.', 'a = [1, 2]\na.____(3)\nprint(a)', 'python'),
+  ]},
+  { id: 'py4', name: '조건과 반복', tip: ['`range(3)` 은 0, 1, 2. `range(1, 6, 2)` 는 1, 3, 5.', '`break` 는 반복 탈출, `continue` 는 이번 회차만 건너뛰기.', '`print(x, end="")` 는 줄을 안 바꿔.'], qs: [
+    py('for i in range(3):\n    print(i, end="")', '012', '0, 1, 2를 붙여서 출력해.'),
+    py('print(sum(range(1, 6, 2)))', '9', '1 + 3 + 5 = 9.'),
+    py('s = 0\nfor i in range(1, 5):\n    s += i\nprint(s)', '10', '1 + 2 + 3 + 4 = 10. 5는 포함 안 돼.'),
+    pym('x = 7\nif x > 5 and x % 2 == 0:\n    print("A")\nelif x > 5:\n    print("B")\nelse:\n    print("C")', ['A', 'B', 'C', 'AB'], 1, '7은 홀수라 첫 조건은 거짓, 둘째가 참이야.'),
+    py('i = 0\nwhile i < 3:\n    i += 1\nprint(i)', '3', 'i가 3이 되면 조건이 거짓이라 끝나.'),
+    py('for i in range(5):\n    if i == 3:\n        break\n    print(i, end="")', '012', 'i가 3이면 출력 전에 탈출해.'),
+    py('for i in range(4):\n    if i == 2:\n        continue\n    print(i, end="")', '013', '2일 때만 건너뛰어.'),
+    py('c = 0\nfor i in range(2):\n    for j in range(3):\n        c += 1\nprint(c)', '6', '2 × 3 = 6번.'),
+    pym('print("a" if 3 > 5 else "b")', ['a', 'b', 'True', 'False'], 1, '조건이 거짓이라 else 쪽이야.'),
+    py('print([i * 2 for i in range(3)])', '[0, 2, 4]', '0, 1, 2에 각각 2를 곱해.'),
+    py('print([i for i in range(5) if i % 2])', '[1, 3]', '`i % 2` 가 1(참)인 홀수만 남아.'),
+    pym('print(3 in [1, 2, 3])', ['True', 'False', '3', '오류'], 0, '`in` 은 포함 여부를 알려 줘.'),
+    I('오류가 나는 Line 번호를 쓰시오.', '2', 'if 줄 끝에 콜론(:)이 빠졌어.', { c: 'def f(n):\n    if n > 0\n        return n\nprint(f(1))', lang: 'python' }),
+  ]},
+  { id: 'py5', name: '함수와 재귀', tip: ['기본값 `def f(a, b=2)` 은 값을 안 주면 2를 써.', '`return` 이 없는 함수는 `None` 을 돌려줘.', '재귀는 맨 밑까지 내려갔다가 돌아오면서 계산해.'], qs: [
+    py('def f(a, b=2):\n    return a * b\nprint(f(3))', '6', 'b를 안 줘서 기본값 2. 3 × 2.'),
+    py('def f(a, b=2):\n    return a * b\nprint(f(3, 4))', '12', 'b에 4를 줬어.'),
+    py('def f():\n    return 1, 2\nx, y = f()\nprint(y)', '2', '여러 값을 한 번에 돌려받을 수 있어.'),
+    py('def f(n):\n    return 1 if n <= 1 else n * f(n - 1)\nprint(f(4))', '24', '4 × 3 × 2 × 1 = 24.'),
+    py('def fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\nprint(fib(6))', '8', '0, 1, 1, 2, 3, 5, 8. fib(6)이 8이야.'),
+    pym('x = 1\ndef f():\n    x = 2\nf()\nprint(x)', ['1', '2', 'None', '오류'], 0, '함수 안의 x는 지역 변수라 밖의 x는 그대로야.'),
+    pym('x = 1\ndef f():\n    global x\n    x = 2\nf()\nprint(x)', ['2', '1', 'None', '오류'], 0, '`global` 이면 밖의 x를 바꿔.'),
+    py('g = lambda x: x + 1\nprint(g(2))', '3', 'lambda는 한 줄짜리 함수야.'),
+    py('print(list(map(lambda x: x * x, [1, 2, 3])))', '[1, 4, 9]', '각 원소를 제곱해.'),
+    pym('def f():\n    pass\nprint(f())', ['None', '0', '오류', 'pass'], 0, 'return이 없으면 None이야.'),
+    I('오류가 나는 Line 번호를 쓰시오.', '5', 'return이 함수 밖으로 나와 있어. 들여쓰기해야 해.', { c: 'def total(n):\n    s = 0\n    for i in range(n):\n        s += i\nreturn s\nprint(total(3))', lang: 'python' }),
+    py('def total(n):\n    s = 0\n    for i in range(n):\n        s += i\n    return s\nprint(total(3))', '3', '0 + 1 + 2 = 3.'),
+    py('def f(n):\n    if n == 0:\n        return 0\n    return n + f(n - 1)\nprint(f(3))', '6', '3 + 2 + 1 + 0.'),
+  ]},
+  { id: 'py6', name: '딕셔너리와 집합', tip: ['`d.items()` 는 (키, 값) 묶음, `d.keys()` 는 키, `d.values()` 는 값이야.', '`d.get(k, 0)` 은 키가 없으면 0을 돌려줘. `d[k]` 는 KeyError가 나.', '집합은 중복이 없어. `&` 교집합, `|` 합집합.'], qs: [
+    py('d = {"a": 1, "b": 2}\nprint(d["b"])', '2', '키로 값을 꺼내.'),
+    py('d = {"a": 1, "b": 2}\nd["c"] = 3\nprint(len(d))', '3', '새 키를 넣으면 늘어나.'),
+    F('키와 값을 함께 꺼내도록 빈칸의 메소드를 쓰시오.', 'items', '`items()` 가 (키, 값)을 줘.', 'd = {"a": 1}\nfor k, v in d.____():\n    print(k, v)', 'python'),
+    py('d = {"a": 1, "b": 2}\nprint(list(d.keys()))', "['a', 'b']", '키만 모은 목록이야.'),
+    py('d = {"a": 1}\nprint(d.get("z", 0))', '0', '없는 키라 기본값 0.'),
+    M('없는 키를 `d["z"]` 로 꺼내면?', ['KeyError', 'None', '0', '빈 문자열'], 0, '`[]` 는 오류, `get` 은 기본값이야.'),
+    pym('print(len({1, 2, 2, 3}))', ['3', '4', '2', '오류'], 0, '집합은 중복을 없애.'),
+    py('print({1, 2} & {2, 3})', '{2}', '`&` 는 교집합.'),
+    py('print({1, 2} | {2, 3})', '{1, 2, 3}', '`|` 는 합집합.'),
+    pym('print("a" in {"a": 1})', ['True', 'False', '1', '오류'], 0, '딕셔너리의 `in` 은 키를 찾아.'),
+    py('d = {"a": 1, "b": 2}\nprint([k for k, v in d.items() if v == 2])', "['b']", '값이 2인 키만 모아.'),
+    py('d = {}\nfor c in "aab":\n    d[c] = d.get(c, 0) + 1\nprint(d["a"])', '2', '글자 수 세기 패턴이야. a는 2번.'),
+  ]},
+  { id: 'py7', name: '클래스와 트리', tip: ['생성자는 `__init__`, 메소드의 첫 매개변수는 `self`.', '`class B(A)` 는 A를 상속해.', '중위 순회는 왼쪽 → 나 → 오른쪽. 전위는 나가 먼저, 후위는 나가 마지막.'], qs: [
+    py('class A:\n    def __init__(self, x):\n        self.x = x\na = A(3)\nprint(a.x)', '3', '생성자가 x를 저장해.'),
+    F('Python 생성자 메소드의 이름을 쓰시오.', '__init__', '언더바 두 개씩이야.'),
+    py('class C:\n    def __init__(self):\n        self.n = 0\n    def up(self):\n        self.n += 1\nc = C()\nc.up()\nc.up()\nprint(c.n)', '2', '두 번 올렸어.'),
+    py('class A:\n    def f(self):\n        return "A"\nclass B(A):\n    pass\nprint(B().f())', 'A', 'B에 없으면 부모 A에서 찾아.'),
+    py('class A:\n    def f(self):\n        return "A"\nclass B(A):\n    def f(self):\n        return "B"\nprint(B().f())', 'B', '오버라이딩이야.'),
+    py('class A:\n    def f(self):\n        return "A"\nclass B(A):\n    def f(self):\n        return super().f() + "B"\nprint(B().f())', 'AB', '`super()` 는 부모 메소드를 불러.'),
+    M('Python 메소드의 첫 매개변수로 관례상 쓰는 이름은?', ['self', 'this', 'me', 'super'], 0, '`this` 는 Java 쪽이야.'),
+    py('class A:\n    n = 0\nA.n += 1\nA.n += 1\nprint(A.n)', '2', '클래스 변수야.'),
+    py('class Node:\n    def __init__(self, key):\n        self.left = None\n        self.right = None\n        self.key = key\ndef order(r):\n    if r:\n        order(r.left)\n        print(r.key, end="/")\n        order(r.right)\nroot = Node(4)\nroot.left = Node(2)\nroot.right = Node(6)\nroot.left.left = Node(1)\norder(root)', '1/2/4/6/', '왼쪽 → 나 → 오른쪽, 중위 순회야.'),
+    py('class Node:\n    def __init__(self, key):\n        self.left = None\n        self.right = None\n        self.key = key\ndef order(r):\n    if r:\n        print(r.key, end="/")\n        order(r.left)\n        order(r.right)\nroot = Node(4)\nroot.left = Node(2)\nroot.right = Node(6)\nroot.left.left = Node(1)\norder(root)', '4/2/1/6/', '나 → 왼쪽 → 오른쪽, 전위 순회야.'),
+    py('class Node:\n    def __init__(self, key):\n        self.left = None\n        self.right = None\n        self.key = key\ndef order(r):\n    if r:\n        order(r.left)\n        order(r.right)\n        print(r.key, end="/")\nroot = Node(4)\nroot.left = Node(2)\nroot.right = Node(6)\nroot.left.left = Node(1)\norder(root)', '1/2/6/4/', '왼쪽 → 오른쪽 → 나, 후위 순회야.'),
+    py('class P:\n    def __str__(self):\n        return "P!"\nprint(P())', 'P!', 'print는 `__str__` 을 불러.'),
+  ]},
+]},
+{ id: 'jv', name: 'Java', sub: '문법보다 객체 흐름이 핵심', color: 'orange', subj: 'lang', lessons: [
+  { id: 'jv1', name: '기본과 연산자', tip: ['정수끼리 나누면 소수점을 버려. `7 / 2` 는 3.', '`i++` 는 쓰고 나서 증가, `++i` 는 증가하고 나서 써.', '`1 + 2 + "3"` 은 앞에서부터 계산해서 "33".'], qs: [
+    jvm('int a = 7, b = 2;\nSystem.out.print(a / b);', ['3', '3.5', '4', '3.0'], 0, '정수끼리 나누면 소수점을 버려.'),
+    jv('int a = 7, b = 2;\nSystem.out.print(a % b);', '1', '나머지야.'),
+    jvm('System.out.print(7 / 2.0);', ['3.5', '3', '3.0', '4'], 0, '한쪽이 실수면 결과도 실수야.'),
+    jv('int i = 3;\nint j = i++;\nSystem.out.print(i + " " + j);', '4 3', 'j에 3을 넣고 나서 i가 4가 돼.'),
+    jv('int i = 3;\nint j = ++i;\nSystem.out.print(i + " " + j);', '4 4', 'i가 먼저 4가 되고 j에 들어가.'),
+    jvm('System.out.print(1 + 2 + "3");', ['33', '123', '6', '오류'], 0, '1+2=3을 먼저 하고 "3"을 이어 붙여.'),
+    jvm('System.out.print("1" + 2 + 3);', ['123', '33', '6', '15'], 0, '문자열이 앞이면 전부 이어 붙이기야.'),
+    jv('int x = 5;\nSystem.out.print(x > 3 ? "A" : "B");', 'A', '삼항 연산자. 참이면 앞쪽.'),
+    jv("char c = 'A';\nSystem.out.print((char)(c + 1));", 'B', 'char로 바꾸면 다음 글자야.'),
+    jvm("char c = 'A';\nSystem.out.print(c + 1);", ['66', 'B', 'A1', '오류'], 0, "형변환이 없으면 정수로 계산돼. 'A'는 65."),
+    jv('int a = 5;\na += 3;\na *= 2;\nSystem.out.print(a);', '16', '(5 + 3) × 2.'),
+    jvm('System.out.print(5 > 3 && 2 > 3);', ['false', 'true', '1', '0'], 0, '&& 는 둘 다 참이어야 해.'),
+    jv('System.out.print(6 & 3);', '2', '110 AND 011 = 010, 즉 2.'),
+    M('Java 자료형 중 정수형이 아닌 것은?', ['double', 'int', 'long', 'short'], 0, 'double은 실수형이야.'),
+  ]},
+  { id: 'jv2', name: '반복과 배열', tip: ['배열 길이는 `a.length`(괄호 없음), 문자열 길이는 `s.length()`.', '`do-while` 은 최소 한 번은 실행해.', '`switch` 에서 `break` 가 없으면 아래 case까지 계속 실행돼.'], qs: [
+    jv('int s = 0;\nfor (int i = 1; i <= 4; i++) s += i;\nSystem.out.print(s);', '10', '1 + 2 + 3 + 4.'),
+    jv('int[] a = {1, 2, 3};\nSystem.out.print(a.length);', '3', '길이 3.'),
+    jv('int[] a = {3, 5, 7};\nSystem.out.print(a[1]);', '5', '인덱스는 0부터.'),
+    jv('int[] a = {3, 5, 7};\nint s = 0;\nfor (int x : a) s += x;\nSystem.out.print(s);', '15', '향상된 for문으로 모두 더해.'),
+    M('길이 3인 배열에서 `a[3]` 을 읽으면?', ['ArrayIndexOutOfBoundsException', '0이 나온다', 'null이 나온다', '컴파일 오류'], 0, '실행 중에 나는 예외야.'),
+    jv('int i = 0;\nwhile (i < 5) {\n    i += 2;\n}\nSystem.out.print(i);', '6', '2, 4, 6에서 끝나.'),
+    jvm('int i = 5;\ndo {\n    i++;\n} while (i < 5);\nSystem.out.print(i);', ['6', '5', '4', '0'], 0, 'do-while은 조건을 나중에 봐서 한 번은 실행해.'),
+    jv('for (int i = 0; i < 5; i++) {\n    if (i == 1) continue;\n    if (i == 3) break;\n    System.out.print(i);\n}', '02', '1은 건너뛰고 3에서 멈춰.'),
+    jvm('int n = 1;\nswitch (n) {\n    case 1: System.out.print("A");\n    case 2: System.out.print("B"); break;\n    default: System.out.print("C");\n}', ['AB', 'A', 'ABC', 'B'], 0, 'case 1에 break가 없어서 B까지 실행돼.'),
+    jv('int[][] m = {{1, 2}, {3, 4}};\nSystem.out.print(m[1][0]);', '3', '1행 0열.'),
+    jv('int[][] m = {{1, 2}, {3, 4}};\nSystem.out.print(m.length);', '2', '행의 개수야.'),
+    jv('int[] a = {3, 1, 2};\nfor (int i = 0; i < a.length - 1; i++) {\n    if (a[i] > a[i + 1]) {\n        int t = a[i];\n        a[i] = a[i + 1];\n        a[i + 1] = t;\n    }\n}\nSystem.out.print(a[2]);', '3', '버블 정렬 1회전. 가장 큰 값이 맨 뒤로 가.'),
+  ]},
+  { id: 'jv3', name: '문자열 비교', tip: ['`==` 는 같은 객체인지, `equals` 는 내용이 같은지 봐.', '`new String("hi")` 는 매번 새 객체야.', '`"hi"` 처럼 바로 쓴 문자열은 같은 내용이면 같은 객체를 공유해.'], qs: [
+    jvm('String a = new String("hi");\nString b = new String("hi");\nSystem.out.print(a == b);', ['false', 'true', 'hi', '오류'], 0, 'new로 만든 서로 다른 객체야.'),
+    jvm('String a = new String("hi");\nString b = new String("hi");\nSystem.out.print(a.equals(b));', ['true', 'false', 'hi', '오류'], 0, '내용이 같아.'),
+    jvm('String a = "hi";\nString b = "hi";\nSystem.out.print(a == b);', ['true', 'false', 'hi', '오류'], 0, '문자열 상수는 같은 객체를 공유해.'),
+    jv('System.out.print("hello".length());', '5', '문자열 길이는 괄호를 붙여.'),
+    jv('System.out.print("hello".charAt(1));', 'e', '1번 글자.'),
+    jv('System.out.print("hello".substring(1, 3));', 'el', '1번부터 3번 앞까지.'),
+    jv('System.out.print("Java".toUpperCase());', 'JAVA', '전부 대문자로.'),
+    jv('System.out.print("a-b".replace("-", "+"));', 'a+b', '바꾸기.'),
+    F('문자열의 내용을 비교하는 메소드 이름을 쓰시오.', 'equals', '`==` 로 비교하면 안 돼.'),
+    jv('System.out.print("abc".indexOf("c"));', '2', '0부터 세서 2.'),
+    jv('StringBuilder sb = new StringBuilder("ab");\nsb.append("c");\nSystem.out.print(sb);', 'abc', 'StringBuilder는 내용을 직접 바꿔.'),
+    jv('String s1 = new String("A");\nString s2 = new String("A");\nif (s1.equals(s2)) System.out.print(s1);\nelse System.out.print(s1 + s2);', 'A', 'equals는 참이라 s1만 출력해.'),
+  ]},
+  { id: 'jv4', name: '클래스와 생성자', tip: ['생성자는 클래스와 이름이 같고 반환형이 없어.', '`static` 변수는 모든 객체가 하나를 함께 써.', '`this()` 는 같은 클래스의 다른 생성자를 불러.'], qs: [
+    jv('class A {\n    int x;\n    A(int v) { x = v; }\n}\n// main 안에서\nA a = new A(3);\nSystem.out.print(a.x);', '3', '생성자가 x에 3을 넣어.'),
+    F('객체를 만들 때 쓰는 키워드를 쓰시오.', 'new', '`new A()` 처럼 써.'),
+    F('같은 클래스의 다른 생성자를 부를 때 쓰는 키워드를 쓰시오.', 'this', '`this(...)` 는 생성자 첫 줄에 와.'),
+    M('생성자 설명으로 틀린 것은?', ['반환형을 반드시 int로 쓴다', '클래스 이름과 같다', '객체를 만들 때 호출된다', '오버로딩할 수 있다'], 0, '생성자에는 반환형이 없어.'),
+    jvm('class C {\n    static int n = 0;\n    C() { n++; }\n}\n// main 안에서\nnew C();\nnew C();\nSystem.out.print(C.n);', ['2', '1', '0', '오류'], 0, 'static은 공유라 두 번 증가해.'),
+    jvm('class C {\n    int n = 0;\n    C() { n++; }\n}\n// main 안에서\nC a = new C();\nC b = new C();\nSystem.out.print(a.n);', ['1', '2', '0', '오류'], 0, '인스턴스 변수는 객체마다 따로야.'),
+    jv('static int f(int a) { return a + 1; }\nstatic int f(int a, int b) { return a + b; }\n// main 안에서\nSystem.out.print(f(2) + f(2, 3));', '8', '3 + 5. 매개변수 개수로 골라져.'),
+    M('오버로딩의 설명으로 맞는 것은?', ['이름이 같고 매개변수가 다른 메소드를 여러 개 만든다', '부모 메소드를 자식이 다시 정의한다', '변수를 숨긴다', '클래스를 두 개 상속한다'], 0, '부모 것을 다시 쓰는 건 오버라이딩이야.'),
+    jv('class A {\n    A() { System.out.print("a"); }\n    A(int x) {\n        this();\n        System.out.print("b");\n    }\n}\n// main 안에서\nnew A(1);', 'ab', 'this()가 먼저 a를 찍어.'),
+    M('`private` 멤버에 접근할 수 있는 곳은?', ['같은 클래스 안', '같은 패키지 전체', '자식 클래스', '어디서나'], 0, '가장 좁은 범위야.'),
+    P('접근 제어자와 범위를 맞춰 봐.', [['public', '어디서나'], ['protected', '같은 패키지 + 자식'], ['default', '같은 패키지'], ['private', '같은 클래스']], '범위 넓은 순서로 public > protected > default > private.'),
+    F('객체 없이 호출하는 메소드에 붙이는 키워드를 쓰시오.', 'static', '`Math.abs()` 같은 게 static이야.'),
+  ]},
+  { id: 'jv5', name: '상속과 오버라이딩', tip: ['자식 생성자는 첫 줄에서 부모 생성자를 먼저 불러. 안 쓰면 `super()` 가 자동으로 들어가.', '`P p = new C();` 로 메소드를 부르면 실제 객체 C의 메소드가 실행돼.', '필드는 다르게, 변수 타입 P 쪽 값을 봐.'], qs: [
+    jvm('class P { P() { System.out.print("P"); } }\nclass C extends P { C() { System.out.print("C"); } }\n// main 안에서\nnew C();', ['PC', 'C', 'CP', 'P'], 0, '부모 생성자가 먼저 실행돼.'),
+    F('클래스를 상속할 때 쓰는 키워드를 쓰시오.', 'extends', '`class C extends P`.'),
+    F('부모의 생성자나 메소드를 부르는 키워드를 쓰시오.', 'super', '`super()`, `super.f()`.'),
+    jv('class P { void f() { System.out.print("P"); } }\nclass C extends P { void f() { System.out.print("C"); } }\n// main 안에서\nP p = new C();\np.f();', 'C', '실제 객체가 C야.'),
+    jv('class P { void f() { System.out.print("P"); } }\nclass C extends P {\n    void f() {\n        super.f();\n        System.out.print("C");\n    }\n}\n// main 안에서\nnew C().f();', 'PC', 'super.f()가 먼저 실행돼.'),
+    jv('class A { A() { System.out.print("A"); } }\nclass B extends A { B() { System.out.print("B"); } }\nclass C extends B { C() { System.out.print("C"); } }\n// main 안에서\nnew C();', 'ABC', '맨 위 부모부터 실행돼.'),
+    jv('class A {\n    A() { System.out.print("1"); }\n    A(int x) {\n        this();\n        System.out.print("2");\n    }\n}\nclass B extends A {\n    B() {\n        super(5);\n        System.out.print("3");\n    }\n}\n// main 안에서\nnew B();', '123', 'super(5) → this() 순서로 올라가서 1, 2, 3.'),
+    M('오버라이딩의 설명으로 맞는 것은?', ['부모 메소드를 자식이 같은 형태로 다시 정의한다', '같은 클래스에 이름 같은 메소드를 여러 개 만든다', '변수 이름을 바꾼다', '생성자를 없앤다'], 0, '오버로딩과 헷갈리기 쉬워.'),
+    jvm('class P { int x = 1; }\nclass C extends P { int x = 2; }\n// main 안에서\nP p = new C();\nSystem.out.print(p.x);', ['1', '2', '3', '오류'], 0, '필드는 변수 타입(P)을 따라가.'),
+    M('`final class` 의 특징은?', ['상속할 수 없다', '객체를 만들 수 없다', '메소드가 없다', '값이 0이다'], 0, '`final` 은 더 못 바꾼다는 뜻이야.'),
+    M('다음 중 컴파일 오류가 나는 것은? (C는 P의 자식)', ['`C c = new P();`', '`P p = new C();`', '`P p = new P();`', '`C c = new C();`'], 0, '부모 객체를 자식 타입에 그냥 넣을 수 없어.'),
+    jv('class P {\n    int v() { return 1; }\n    int g() { return v() * 2; }\n}\nclass C extends P {\n    int v() { return 3; }\n}\n// main 안에서\nSystem.out.print(new C().g());', '6', 'g 안의 v()도 실제 객체 C의 것을 불러. 3 × 2.'),
+  ]},
+  { id: 'jv6', name: '인터페이스와 예외', tip: ['인터페이스는 `implements`, 클래스는 `extends`.', '추상 클래스는 `new` 로 못 만들고, 자식이 추상 메소드를 구현해.', '`finally` 는 예외가 나도 안 나도 실행돼.'], qs: [
+    F('인터페이스를 구현할 때 쓰는 키워드를 쓰시오.', 'implements', '`class Mul implements Op`.'),
+    F('빈칸에 알맞은 키워드를 쓰시오.', 'interface', '인터페이스 선언 키워드야.', '____ Op {\n    int calc(int a, int b);\n}', 'java'),
+    F('구현부가 없는 메소드나 그런 클래스에 붙이는 키워드를 쓰시오.', 'abstract', '추상 메소드, 추상 클래스.'),
+    M('추상 클래스의 설명으로 맞는 것은?', ['`new` 로 직접 객체를 만들 수 없다', '메소드를 가질 수 없다', '상속할 수 없다', '생성자가 반드시 없다'], 0, '자식이 구현해야 객체를 만들 수 있어.'),
+    jv('interface Op { int calc(int a, int b); }\nclass Mul implements Op {\n    public int calc(int a, int b) { return a * b; }\n}\n// main 안에서\nOp o = new Mul();\nSystem.out.print(o.calc(3, 4));', '12', '3 × 4.'),
+    jv('abstract class S {\n    abstract int area();\n    void show() { System.out.print(area()); }\n}\nclass R extends S {\n    int area() { return 6; }\n}\n// main 안에서\nnew R().show();', '6', 'show 안에서 자식의 area를 불러.'),
+    M('Java에서 맞는 것은?', ['클래스는 인터페이스를 여러 개 구현할 수 있다', '클래스는 부모 클래스를 여러 개 상속할 수 있다', '인터페이스는 new로 만든다', 'implements는 클래스끼리 쓴다'], 0, '클래스 다중 상속은 안 되고, 인터페이스 다중 구현은 돼.'),
+    jv('interface Op { int calc(int a, int b); }\nclass Add implements Op { public int calc(int a, int b) { return a + b; } }\nclass Mul implements Op { public int calc(int a, int b) { return a * b; } }\n// main 안에서\nOp[] ops = {new Add(), new Mul()};\nfor (Op o : ops) System.out.print(o.calc(2, 3));', '56', '2 + 3 = 5, 2 × 3 = 6.'),
+    jvm('try {\n    int x = 1 / 0;\n    System.out.print("a");\n} catch (Exception e) {\n    System.out.print("b");\n} finally {\n    System.out.print("c");\n}', ['bc', 'abc', 'ac', 'c'], 0, '0으로 나누는 순간 catch로 가서 a는 안 찍혀.'),
+    F('예외 처리에서 항상 실행되는 블록의 키워드를 쓰시오.', 'finally', 'try, catch, finally.'),
+  ]},
+]},
+{ id: 'sq', name: 'SQL', sub: '점수 따기 제일 좋은 과목', color: 'teal', subj: 'sql', lessons: [
+  { id: 'sq1', name: 'SELECT와 WHERE', tip: ['`SELECT 컬럼 FROM 테이블 WHERE 조건` 이 기본 틀이야.', '`LIKE` 에서 `%` 는 몇 글자든, `_` 는 딱 한 글자.', 'NULL은 `= NULL` 이 아니라 `IS NULL` 로 찾아.'], qs: [
+    O('emp 테이블의 모든 컬럼을 조회하는 쿼리를 완성해.', ['SELECT', '*', 'FROM', 'emp'], ['WHERE', 'INTO'], '`*` 는 모든 컬럼이야.'),
+    sq("SELECT COUNT(*) FROM emp WHERE dept = '개발';", '2', '개발 부서는 2명.', EMP),
+    sq('SELECT name FROM emp WHERE sal >= 400;', '박두리', '400 이상은 한 명.', EMP),
+    sq("SELECT COUNT(*) FROM emp WHERE name LIKE '박%';", '2', '박두리, 박넷.', EMP),
+    F('이름이 "나"로 끝나는 사람을 찾도록 빈칸을 채우시오.', '%나', '`%` 는 앞에 몇 글자가 있어도 돼.', "SELECT * FROM emp WHERE name LIKE '____';", 'sql'),
+    F('성이 박씨이고 이름이 딱 2글자(박 + 1글자)인 사람을 찾도록 빈칸을 채우시오.', '박_', '`_` 는 딱 한 글자야.', "SELECT * FROM emp WHERE name LIKE '____';", 'sql'),
+    M('`LIKE` 의 `%` 와 `_` 설명으로 맞는 것은?', ['% 는 0글자 이상, _ 는 한 글자', '% 는 한 글자, _ 는 0글자 이상', '둘 다 한 글자', '둘 다 0글자 이상'], 0, '자주 나오는 구분이야.'),
+    sq('SELECT COUNT(*) FROM emp WHERE sal IS NULL;', '1', '최다섯의 sal이 NULL이야.', EMP),
+    M('sal이 NULL인 행을 찾는 올바른 조건은?', ['`sal IS NULL`', '`sal = NULL`', '`sal == NULL`', '`sal LIKE NULL`'], 0, 'NULL은 `=` 로 비교가 안 돼.'),
+    sq("SELECT COUNT(*) FROM emp WHERE dept IN ('개발', '인사');", '3', '개발 2명 + 인사 1명.', EMP),
+    sq('SELECT COUNT(*) FROM emp WHERE sal BETWEEN 250 AND 300;', '2', 'BETWEEN은 양 끝을 포함해. 300과 250.', EMP),
+    F('내림차순 정렬 키워드를 쓰시오.', 'DESC', '`ORDER BY sal DESC`. 오름차순은 ASC.'),
+    O('개발 부서 사람의 이름만 조회해.', ['SELECT', 'name', 'FROM', 'emp', 'WHERE', "dept='개발'"], ['GROUP BY', 'HAVING'], '순서는 SELECT, FROM, WHERE.'),
+    sq('SELECT COUNT(DISTINCT dept) FROM emp;', '3', '중복을 빼면 개발, 영업, 인사.', EMP),
+  ]},
+  { id: 'sq2', name: '집계와 GROUP BY', tip: ['`COUNT(*)` 는 모든 행, `COUNT(컬럼)` 은 NULL을 뺀 행을 세.', '`SUM`, `AVG` 도 NULL은 빼고 계산해.', '`WHERE` 는 그룹 전 행 조건, `HAVING` 은 그룹 후 조건.'], qs: [
+    sq('SELECT SUM(sal) FROM emp;', '1150', '300 + 400 + 250 + 200. NULL은 빠져.', EMP),
+    sq('SELECT AVG(sal) FROM emp;', '287.5', '1150 ÷ 4. NULL인 행은 개수에서도 빠져.', EMP),
+    sq('SELECT COUNT(sal) FROM emp;', '4', 'NULL은 안 세.', EMP),
+    sq('SELECT COUNT(*) FROM emp;', '5', '`*` 는 모든 행을 세.', EMP),
+    M('행이 5개이고 sal 중 1개가 NULL일 때 맞는 것은?', ['COUNT(*)는 5, COUNT(sal)은 4', '둘 다 5', '둘 다 4', 'COUNT(*)는 4, COUNT(sal)은 5'], 0, '시험에 자주 나오는 차이야.'),
+    sq('SELECT MAX(sal) FROM emp;', '400', '최댓값.', EMP),
+    sq("SELECT SUM(sal) FROM emp WHERE dept = '영업';", '250', '이세나 250 + NULL은 빠져서 250.', EMP),
+    I('이 쿼리 결과의 행 수를 쓰시오.', '3', '부서가 3개라 3행.', { c: 'SELECT dept, COUNT(*) FROM emp GROUP BY dept;', lang: 'sql', tb: EMP }),
+    I('이 쿼리 결과의 행 수를 쓰시오.', '2', '2명 이상인 부서는 개발, 영업.', { c: 'SELECT dept FROM emp GROUP BY dept HAVING COUNT(*) >= 2;', lang: 'sql', tb: EMP }),
+    F('GROUP BY 뒤에 그룹 조건을 걸 때 쓰는 키워드를 쓰시오.', 'HAVING', 'WHERE는 집계 함수를 조건으로 못 써.'),
+    M('WHERE와 HAVING의 설명으로 맞는 것은?', ['WHERE는 그룹 전, HAVING은 그룹 후에 거른다', 'WHERE는 그룹 후, HAVING은 그룹 전에 거른다', '둘은 똑같다', 'HAVING은 GROUP BY 없이 항상 쓴다'], 0, '실행 순서를 생각하면 쉬워.'),
+    O('부서별 인원을 구해.', ['SELECT', 'dept,', 'COUNT(*)', 'FROM', 'emp', 'GROUP BY', 'dept'], ['HAVING', 'ORDER BY'], '그룹 기준 컬럼을 같이 SELECT해.'),
+    O('SQL의 논리적 실행 순서대로 놓아 봐.', ['FROM', 'WHERE', 'GROUP BY', 'HAVING', 'SELECT', 'ORDER BY'], [], 'SELECT는 쓰는 순서와 달리 뒤쪽에 실행돼.'),
+  ]},
+  { id: 'sq3', name: '조인과 서브쿼리', tip: ['`INNER JOIN` 은 양쪽에 다 있는 행, `LEFT JOIN` 은 왼쪽을 전부 남겨.', '`IN (SELECT ...)` 은 안쪽 결과에 있는 것만 골라.', '`UNION` 은 중복 제거, `UNION ALL` 은 그대로.'], qs: [
+    sq('SELECT SUM(v) FROM t2\nWHERE k NOT IN (SELECT k FROM t1);', '12', 't1에 없는 D, F. 5 + 7.', T12),
+    sq('SELECT SUM(v) FROM t1\nWHERE k IN (SELECT k FROM t2);', '3', 't2에도 있는 A, C. 1 + 2.', T12),
+    sq('SELECT COUNT(*) FROM t1\nJOIN t2 ON t1.k = t2.k;', '2', '공통 키는 A, C.', T12),
+    sq('SELECT COUNT(*) FROM t1\nLEFT JOIN t2 ON t1.k = t2.k;', '4', '왼쪽 t1의 4행이 모두 남아.', T12),
+    sq("SELECT t1.v + t2.v FROM t1\nJOIN t2 ON t1.k = t2.k\nWHERE t1.k = 'C';", '5', '2 + 3.', T12),
+    M('`LEFT JOIN` 의 설명으로 맞는 것은?', ['왼쪽 행은 모두 남고, 짝이 없으면 오른쪽이 NULL', '양쪽 모두에 있는 행만 남는다', '오른쪽 행이 모두 남는다', '모든 조합을 만든다'], 0, '짝 없는 자리는 NULL이야.'),
+    I('이 쿼리 결과의 행 수를 쓰시오.', '6', 'A, B, C, E, D, F. 중복은 제거돼.', { c: 'SELECT k FROM t1\nUNION\nSELECT k FROM t2;', lang: 'sql', tb: T12 }),
+    I('이 쿼리 결과의 행 수를 쓰시오.', '8', '`UNION ALL` 은 중복을 안 지워.', { c: 'SELECT k FROM t1\nUNION ALL\nSELECT k FROM t2;', lang: 'sql', tb: T12 }),
+    I('이 쿼리 결과의 행 수를 쓰시오.', '2', 't1에만 있는 B, E. `EXCEPT` 는 차집합이야.', { c: 'SELECT k FROM t1\nEXCEPT\nSELECT k FROM t2;', lang: 'sql', tb: T12 }),
+    sq('SELECT k FROM t1\nWHERE v = (SELECT MAX(v) FROM t1);', 'E', '최댓값 8인 행.', T12),
+    M('행이 4개인 두 테이블을 `CROSS JOIN` 하면 몇 행인가?', ['16', '8', '4', '0'], 0, '모든 조합이라 4 × 4.'),
+    F('서브쿼리 결과에 없는 행을 고르도록 빈칸을 채우시오.', 'NOT', '`NOT IN`.', 'SELECT * FROM t1\nWHERE k ____ IN (SELECT k FROM t2);', 'sql'),
+  ]},
+  { id: 'sq4', name: 'DDL·DML·DCL', tip: ['DDL은 구조(CREATE, ALTER, DROP, TRUNCATE), DML은 데이터(SELECT, INSERT, UPDATE, DELETE), DCL은 권한(GRANT, REVOKE).', '`DROP` 은 테이블째, `TRUNCATE` 는 구조 남기고 전부, `DELETE` 는 조건에 맞는 행만.', '`CASCADE` 는 연관된 것까지 함께 지워.'], qs: [
+    P('명령어와 분류를 맞춰 봐.', [['CREATE', 'DDL'], ['INSERT', 'DML'], ['GRANT', 'DCL'], ['COMMIT', 'TCL']], '정의, 조작, 제어, 트랜잭션.'),
+    M('DDL이 아닌 것은?', ['UPDATE', 'CREATE', 'ALTER', 'DROP'], 0, 'UPDATE는 DML이야.'),
+    O('emp 테이블을 구조째로, 연관 조건까지 삭제해.', ['DROP', 'TABLE', 'emp', 'CASCADE'], ['DELETE', 'FROM'], '구조까지 지우는 건 DROP.'),
+    F('테이블 구조는 남기고 모든 행을 지우는 명령어를 쓰시오.', 'TRUNCATE', '`TRUNCATE TABLE emp`.'),
+    M('맞는 설명은?', ['DROP은 구조까지 삭제한다', 'TRUNCATE는 구조까지 삭제한다', 'DELETE는 구조까지 삭제한다', 'DELETE는 조건을 쓸 수 없다'], 0, 'DELETE는 WHERE로 행을 골라 지워.'),
+    O('새 행을 넣어.', ['INSERT', 'INTO', 'emp', 'VALUES', "(6, '정')"], ['SET', 'UPDATE'], 'INSERT INTO ... VALUES.'),
+    O('id가 1인 사람의 급여를 바꿔.', ['UPDATE', 'emp', 'SET', 'sal=500', 'WHERE', 'id=1'], ['INTO', 'FROM'], 'UPDATE ... SET ... WHERE.'),
+    O('id가 1인 행을 지워.', ['DELETE', 'FROM', 'emp', 'WHERE', 'id=1'], ['DROP', 'SET'], 'DELETE는 FROM이 붙어.'),
+    F('컬럼을 추가하도록 빈칸을 채우시오.', 'ADD', '`ALTER TABLE ... ADD`.', 'ALTER TABLE emp ____ age INT;', 'sql'),
+    F('사용자에게 권한을 주는 명령어를 쓰시오.', 'GRANT', '회수는 REVOKE.'),
+    P('트랜잭션 명령어를 맞춰 봐.', [['COMMIT', '변경 확정'], ['ROLLBACK', '변경 취소'], ['SAVEPOINT', '되돌릴 지점 지정']], 'TCL이라고 불러.'),
+    M('WHERE 없이 `UPDATE emp SET sal = 0` 을 실행하면?', ['모든 행의 sal이 0이 된다', '오류가 난다', '첫 행만 바뀐다', '아무 일도 없다'], 0, '조건이 없으면 전부야.'),
+    M('뷰(VIEW)의 설명으로 맞는 것은?', ['쿼리 결과를 가상 테이블처럼 쓴다', '데이터를 항상 따로 복사해 저장한다', '인덱스의 다른 이름이다', '테이블을 지우는 명령이다'], 0, '자주 쓰는 쿼리에 이름을 붙인 거라 보면 돼.'),
+  ]},
+  { id: 'sq5', name: '키와 정규화', tip: ['기본키는 NULL도 중복도 안 돼. 외래키는 다른 테이블의 키를 참조해.', '1NF 원자값 → 2NF 부분 종속 제거 → 3NF 이행 종속 제거.', '행(튜플) 수가 카디널리티, 열(속성) 수가 차수.'], qs: [
+    P('키 이름과 설명을 맞춰 봐.', [['기본키', '행을 대표하는 키, NULL 불가'], ['외래키', '다른 테이블의 키를 참조'], ['후보키', '유일성과 최소성을 가진 키'], ['대체키', '기본키로 뽑히지 않은 후보키']], '후보키 중 하나가 기본키, 나머지가 대체키야.'),
+    M('기본키의 조건으로 맞는 것은?', ['NULL 불가, 중복 불가', 'NULL 가능, 중복 불가', 'NULL 불가, 중복 가능', 'NULL 가능, 중복 가능'], 0, '각 행을 하나로 찾을 수 있어야 해.'),
+    M('외래키의 역할은?', ['다른 테이블과의 참조 관계를 만든다', '정렬 속도만 높인다', '중복 값을 지운다', '테이블 이름을 바꾼다'], 0, '참조 무결성과 연결돼.'),
+    P('정규형과 하는 일을 맞춰 봐.', [['1NF', '모든 값을 원자값으로'], ['2NF', '부분 함수 종속 제거'], ['3NF', '이행 함수 종속 제거'], ['BCNF', '모든 결정자를 후보키로']], '순서대로 외워 두면 편해.'),
+    M('이상 현상이 아닌 것은?', ['조회 이상', '삽입 이상', '삭제 이상', '갱신 이상'], 0, '이상 현상은 삽입, 삭제, 갱신 세 가지야.'),
+    P('ACID를 맞춰 봐.', [['원자성', '전부 되거나 전부 안 되거나'], ['일관성', '규칙을 항상 만족'], ['격리성', '서로 끼어들지 않음'], ['지속성', '확정되면 영구 반영']], '트랜잭션의 네 가지 성질이야.'),
+    P('용어를 맞춰 봐.', [['튜플', '행'], ['속성', '열'], ['카디널리티', '행의 개수'], ['차수', '열의 개수']], '자주 나오는 용어야.'),
+    I('5행 4열 릴레이션의 카디널리티를 숫자로 쓰시오.', '5', '카디널리티는 행 수.'),
+    I('5행 4열 릴레이션의 차수를 숫자로 쓰시오.', '4', '차수는 열 수.'),
+    M('데이터베이스 스키마 3단계가 아닌 것은?', ['물리 스키마', '외부 스키마', '개념 스키마', '내부 스키마'], 0, '외부, 개념, 내부야.'),
+    M('인덱스를 만드는 주된 목적은?', ['조회 속도를 높인다', '저장 공간을 줄인다', '보안을 높인다', '입력 속도를 높인다'], 0, '대신 입력, 수정은 조금 느려져.'),
+    M('E-R 모델의 구성 요소가 아닌 것은?', ['함수', '개체', '속성', '관계'], 0, '개체, 속성, 관계야.'),
+  ]},
+]},
+{ id: 'lx', name: 'Linux·운영체제·네트워크', sub: '외우면 바로 점수', color: 'slate', subj: 'sys', lessons: [
+  { id: 'lx1', name: '경로', tip: ['`/` 로 시작하면 절대 경로야.', '`.` 은 현재, `..` 은 한 칸 위, `~` 는 홈 디렉터리.', '`..` 한 번에 맨 끝 폴더 하나씩 지운다고 생각해.'], qs: [
+    F('현재 위치가 `/home/user/work` 일 때 `../app` 의 절대 경로를 쓰시오.', '/home/user/app', 'work를 빼고 app을 붙여.'),
+    F('현재 위치가 `/a/b/c` 일 때 `../../d` 의 절대 경로를 쓰시오.', '/a/d', '두 칸 올라가면 /a.'),
+    F('현재 위치가 `/a/b` 일 때 `./c/d` 의 절대 경로를 쓰시오.', '/a/b/c/d', '`.` 은 현재 위치야.'),
+    F('현재 위치가 `/var/log` 일 때 `../../etc` 의 절대 경로를 쓰시오.', '/etc', '두 칸 올라가면 루트.'),
+    M('절대 경로는 무엇으로 시작하는가?', ['/', '.', '..', '#'], 0, '루트부터 쓰는 경로야.'),
+    F('한 칸 위 디렉터리를 뜻하는 기호를 쓰시오.', '..', '점 두 개.'),
+    M('`~` 가 뜻하는 곳은?', ['현재 사용자의 홈 디렉터리', '루트 디렉터리', '현재 디렉터리', '휴지통'], 0, '`cd ~` 하면 홈으로 가.'),
+    F('`/home/u` 에서 `cd docs` 후 `cd ..` 를 하면 현재 위치는?', '/home/u', '들어갔다 나왔어.'),
+    P('기호와 뜻을 맞춰 봐.', [['/', '루트'], ['.', '현재 디렉터리'], ['..', '상위 디렉터리'], ['~', '홈 디렉터리']], '네 개만 외우면 돼.'),
+  ]},
+  { id: 'lx2', name: '명령어', tip: ['이동·확인은 `pwd`, `ls`, `cd`.', '파일은 `cp`, `mv`, `rm`, `cat`, `mkdir`.', '시스템은 `ps`, `top`, `kill`, `ifconfig`, `export`, `chmod`.'], qs: [
+    P('명령어와 기능을 맞춰 봐.', [['pwd', '현재 경로 표시'], ['ls', '파일 목록'], ['cd', '디렉터리 이동'], ['cp', '파일 복사']], '기본 네 개야.'),
+    P('명령어와 기능을 맞춰 봐.', [['rm', '파일 삭제'], ['mv', '이동·이름 변경'], ['mkdir', '디렉터리 생성'], ['cat', '파일 내용 출력']], '다음 네 개야.'),
+    F('현재 작업 디렉터리 경로를 표시하는 명령어를 쓰시오.', 'pwd', 'print working directory.'),
+    F('파일 내용을 출력하는 명령어를 쓰시오.', 'cat', 'concatenate에서 왔어.'),
+    F('파일 접근 권한을 바꾸는 명령어를 쓰시오.', 'chmod', 'change mode.'),
+    F('프로세스를 실시간으로 보여 주는 명령어를 쓰시오.', 'top', '한 번만 찍는 건 `ps`.'),
+    F('파일에서 문자열을 찾는 명령어를 쓰시오.', 'grep', '`grep 찾을말 파일`.'),
+    M('디렉터리와 그 안의 내용까지 지우는 명령은?', ['`rm -r 폴더`', '`ls -r 폴더`', '`cp -r 폴더`', '`cat -r 폴더`'], 0, '`-r` 은 안쪽까지 전부(재귀).'),
+    F('환경 변수를 등록하는 명령어를 쓰시오.', 'export', '`export PATH=...`.'),
+    F('네트워크 인터페이스 정보를 보는 명령어를 쓰시오.', ['ifconfig', 'ip'], '요즘은 `ip addr` 도 써.'),
+    M('`ls | grep txt` 에서 `|` 의 뜻은?', ['앞 명령의 출력을 뒤 명령의 입력으로 넘긴다', '두 명령을 동시에 끈다', '또는(OR)이다', '파일로 저장한다'], 0, '파이프라고 해.'),
+    M('`echo hi >> a.txt` 의 동작은?', ['a.txt 끝에 hi를 덧붙인다', 'a.txt를 hi로 덮어쓴다', 'a.txt를 지운다', 'a.txt를 읽는다'], 0, '`>` 는 덮어쓰기, `>>` 는 덧붙이기.'),
+  ]},
+  { id: 'lx3', name: '권한 chmod', tip: ['r=4, w=2, x=1을 더해서 한 자리 숫자를 만들어.', '순서는 소유자, 그룹, 기타 사용자.', '`rwxr-xr-x` = 7, 5, 5.'], qs: [
+    P('권한과 숫자를 맞춰 봐.', [['r', '4'], ['w', '2'], ['x', '1'], ['-', '0']], '더해서 써.'),
+    I('`rwxr-xr--` 를 8진수 숫자로 쓰시오.', '754', '7, 5, 4.'),
+    I('`rw-r--r--` 를 8진수 숫자로 쓰시오.', '644', '6, 4, 4.'),
+    M('`chmod 755` 후 권한은?', ['rwxr-xr-x', 'rwxrwxr-x', 'rw-r-xr-x', 'rwx------'], 0, '7=rwx, 5=r-x.'),
+    M('`chmod 700` 후 권한은?', ['rwx------', 'rwxrwxrwx', 'rw-------', '---rwx---'], 0, '소유자만 전부.'),
+    M('권한 세 묶음의 순서는?', ['소유자, 그룹, 기타', '그룹, 소유자, 기타', '기타, 그룹, 소유자', '소유자, 기타, 그룹'], 0, 'user, group, other.'),
+    F('파일 소유자를 바꾸는 명령어를 쓰시오.', 'chown', 'change owner.'),
+    M('`ls -l` 결과 맨 앞의 `d` 는?', ['디렉터리', '삭제됨', '다운로드', '기본값'], 0, '일반 파일은 `-`.'),
+    I('`rw-rw-r--` 를 8진수 숫자로 쓰시오.', '664', '6, 6, 4.'),
+    M('`chmod u+x a.sh` 의 뜻은?', ['소유자에게 실행 권한을 준다', '모두에게 실행 권한을 뺀다', '그룹에게 쓰기 권한을 준다', '파일을 실행한다'], 0, 'u는 user, +x는 실행 추가.'),
+    M('`chmod 640` 후 권한은?', ['rw-r-----', 'rw-rw----', 'rwxr-----', 'r--rw----'], 0, '6=rw-, 4=r--, 0=---.'),
+  ]},
+  { id: 'os1', name: '운영체제', tip: ['프로세스는 실행 중인 프로그램, 스레드는 그 안의 실행 단위.', '교착상태 4조건은 상호 배제, 점유와 대기, 비선점, 순환 대기.', '페이지 교체: FIFO는 먼저 들어온 것, LRU는 가장 오래 안 쓴 것을 내보내.'], qs: [
+    M('운영체제의 역할이 아닌 것은?', ['문서 맞춤법 검사', '메모리 관리', '프로세스 관리', '파일 관리'], 0, '그건 응용 프로그램의 일이야.'),
+    P('스케줄링 방식을 맞춰 봐.', [['FCFS', '먼저 온 순서대로'], ['SJF', '짧은 작업 먼저'], ['RR', '시간을 나눠 돌아가며']], 'RR은 Round Robin.'),
+    M('선점형 스케줄링은?', ['RR', 'FCFS', '비선점 SJF', 'HRN'], 0, '시간이 다 되면 CPU를 뺏어.'),
+    M('프로세스와 스레드의 설명으로 맞는 것은?', ['같은 프로세스의 스레드는 메모리를 공유한다', '스레드는 프로세스보다 무겁다', '프로세스는 스레드 안에 있다', '스레드는 메모리를 전혀 쓰지 않는다'], 0, '코드, 데이터, 힙을 공유해.'),
+    M('교착상태 발생 조건이 아닌 것은?', ['선점', '상호 배제', '점유와 대기', '순환 대기'], 0, '조건은 "비선점"이야.'),
+    M('LRU 페이지 교체의 기준은?', ['가장 오랫동안 사용하지 않은 페이지', '가장 먼저 들어온 페이지', '가장 자주 쓴 페이지', '가장 큰 페이지'], 0, 'Least Recently Used.'),
+    I('프레임 3개, FIFO, 참조 순서가 1 2 3 1 4일 때 페이지 부재 횟수를 쓰시오.', '4', '1, 2, 3, 4에서 부재. 두 번째 1은 적중.'),
+    I('프레임 2개, LRU, 참조 순서가 1 2 1 3일 때 페이지 부재 횟수를 쓰시오.', '3', '1, 2 부재, 1 적중, 3 부재.'),
+    M('세마포어의 용도는?', ['공유 자원 접근을 제어한다', '파일을 압축한다', 'IP를 할당한다', '화면을 그린다'], 0, 'P, V 연산으로 동기화해.'),
+    M('가상 메모리의 설명으로 맞는 것은?', ['보조 기억 장치를 주기억 장치처럼 쓴다', 'CPU 속도를 2배로 만든다', '파일을 지운다', '캐시의 다른 이름이다'], 0, '실제 메모리보다 큰 프로그램도 돌릴 수 있어.'),
+    M('디스패치(dispatch)로 일어나는 상태 변화는?', ['준비 → 실행', '실행 → 준비', '실행 → 대기', '대기 → 준비'], 0, '실행 → 준비는 타임아웃.'),
+    M('외부 단편화의 설명으로 맞는 것은?', ['빈 공간의 합은 충분한데 흩어져서 못 쓴다', '할당한 공간 안이 남는다', 'CPU가 쉰다', '파일 이름이 겹친다'], 0, '할당 공간 안에 남는 건 내부 단편화.'),
+  ]},
+  { id: 'nt1', name: '네트워크', tip: ['OSI 7계층: 물리, 데이터링크, 네트워크, 전송, 세션, 표현, 응용.', 'TCP는 연결형·신뢰성, UDP는 비연결형·빠름.', '서브넷 호스트 수는 2^(호스트 비트) - 2.'], qs: [
+    O('OSI 7계층을 아래층(1계층)부터 놓아 봐.', ['물리', '데이터링크', '네트워크', '전송', '세션', '표현', '응용'], [], '"물데네전세표응"으로 외워.'),
+    P('프로토콜과 계층을 맞춰 봐.', [['HTTP', '응용 계층'], ['TCP', '전송 계층'], ['IP', '네트워크 계층'], ['이더넷', '데이터링크 계층']], '자주 나와.'),
+    M('TCP의 설명으로 맞는 것은?', ['연결형이고 신뢰성을 보장한다', '비연결형이고 순서를 보장하지 않는다', 'IP 주소를 자동 할당한다', '도메인을 IP로 바꾼다'], 0, 'UDP는 그 반대야.'),
+    P('포트 번호를 맞춰 봐.', [['HTTP', '80'], ['HTTPS', '443'], ['SSH', '22'], ['FTP', '21']], '자주 쓰는 포트야.'),
+    M('DNS의 역할은?', ['도메인 이름을 IP 주소로 바꾼다', 'IP를 자동으로 할당한다', '파일을 전송한다', '메일을 보낸다'], 0, '자동 할당은 DHCP.'),
+    M('DHCP의 역할은?', ['IP 주소를 자동으로 할당한다', '도메인을 IP로 바꾼다', '암호화한다', '라우팅 표를 지운다'], 0, 'Dynamic Host Configuration Protocol.'),
+    I('IPv6 주소는 몇 비트인지 숫자로 쓰시오.', '128', 'IPv4는 32비트.'),
+    I('서브넷 마스크가 /24일 때 사용 가능한 호스트 수를 쓰시오.', '254', '2^8 - 2. 네트워크 주소와 브로드캐스트를 빼.'),
+    I('서브넷 마스크가 /26일 때 사용 가능한 호스트 수를 쓰시오.', '62', '2^6 - 2.'),
+    M('사설 IP 주소는?', ['192.168.0.1', '8.8.8.8', '1.1.1.1', '142.250.0.1'], 0, '192.168.x.x, 10.x.x.x 등이 사설이야.'),
+    M('라우터가 동작하는 OSI 계층은?', ['네트워크 계층', '물리 계층', '응용 계층', '세션 계층'], 0, 'IP를 보고 경로를 정해.'),
+    M('`ping` 이 쓰는 프로토콜은?', ['ICMP', 'FTP', 'SMTP', 'ARP'], 0, '연결 확인용이야.'),
+    M('스위치가 주로 보는 주소는?', ['MAC 주소', 'IP 주소', '도메인', '포트 번호'], 0, '2계층 장비야.'),
+  ]},
+]},
+{ id: 'cc', name: 'C 언어', sub: '필기 대비로 가볍게', color: 'violet', subj: 'lang', lessons: [
+  { id: 'c1', name: '기본 문법', tip: ['`%d` 정수, `%f` 실수, `%c` 문자, `%s` 문자열.', 'C에는 true/false 대신 1과 0을 많이 써.', '`switch` 는 Java처럼 break가 없으면 아래로 흘러.'], qs: [
+    M('실행 결과는?', ['3', '3.5', '4', '3.0'], 0, '정수끼리 나누면 소수점을 버려.', { c: 'int a = 7;\nprintf("%d", a / 2);', lang: 'c' }),
+    cc('printf("%d", 7 % 3);', '1', '나머지.'),
+    cc('printf("%.1f", 7 / 2.0);', '3.5', '소수점 한 자리.'),
+    cc('int a = 3;\nprintf("%d", a++);', '3', '출력하고 나서 증가해.'),
+    cc('int a = 3;\nprintf("%d", ++a);', '4', '증가하고 나서 출력해.'),
+    P('형식 지정자를 맞춰 봐.', [['%d', '정수'], ['%f', '실수'], ['%c', '문자'], ['%s', '문자열']], '기본 네 개.'),
+    cc("char c = 'A';\nprintf(\"%c\", c + 2);", 'C', 'A에서 두 칸 뒤.'),
+    cc('int s = 0;\nfor (int i = 1; i <= 3; i++) s += i * i;\nprintf("%d", s);', '14', '1 + 4 + 9.'),
+    M('실행 결과는?', ['1', '0', 'true', '5'], 0, 'C에서 참은 1이야.', { c: 'int x = 5;\nprintf("%d", x > 3);', lang: 'c' }),
+    cc('int a = 2, s = 0;\nswitch (a) {\n    case 1: s += 1;\n    case 2: s += 2;\n    case 3: s += 3;\n}\nprintf("%d", s);', '5', 'case 2부터 끝까지 흘러. 2 + 3.'),
+    F('`printf` 를 쓰려면 포함해야 하는 헤더 파일 이름을 쓰시오.', 'stdio.h', '`#include <stdio.h>`.'),
+  ]},
+  { id: 'c2', name: '포인터와 배열', tip: ['`&a` 는 a의 주소, `*p` 는 p가 가리키는 값.', '배열 이름은 첫 원소의 주소라서 `*(arr + 1)` 은 `arr[1]` 과 같아.', '문자열 끝에는 `\\0` 이 하나 더 있어.'], qs: [
+    M('실행 결과는?', ['9', '5', '주소값', '오류'], 0, 'p로 a를 직접 바꿨어.', { c: 'int a = 5;\nint *p = &a;\n*p = 9;\nprintf("%d", a);', lang: 'c' }),
+    F('변수의 주소를 얻는 연산자 기호를 쓰시오.', '&', '`&a`.'),
+    cc('int arr[] = {1, 2, 3};\nprintf("%d", *(arr + 1));', '2', 'arr[1]과 같아.'),
+    cc('int arr[3] = {1, 2, 3};\nint *p = arr;\np++;\nprintf("%d", *p);', '2', '포인터가 다음 원소로 가.'),
+    cc('char s[] = "abc";\nprintf("%c", s[1]);', 'b', '1번 글자.'),
+    cc('printf("%d", (int)strlen("abcd"));', '4', '`\\0` 은 길이에 안 들어가.'),
+    M('`char s[] = "abc";` 일 때 `sizeof(s)` 는?', ['4', '3', '1', '8'], 0, '`\\0` 까지 4바이트.'),
+    cc('void swap(int *a, int *b) {\n    int t = *a;\n    *a = *b;\n    *b = t;\n}\n// main 안에서\nint x = 1, y = 2;\nswap(&x, &y);\nprintf("%d %d", x, y);', '2 1', '주소를 넘겨서 진짜로 바뀌어.'),
+    M('실행 결과는?', ['1', '9', '0', '오류'], 0, '값만 복사돼서 x는 그대로야.', { c: 'void f(int a) { a = 9; }\n// main 안에서\nint x = 1;\nf(x);\nprintf("%d", x);', lang: 'c' }),
+    F('구조체 포인터로 멤버에 접근하도록 빈칸의 연산자를 쓰시오.', '->', '`q->x` 는 `(*q).x` 와 같아.', 'struct P { int x; };\nstruct P a;\nstruct P *q = &a;\nq____x = 3;', 'c'),
+    M('C에서 배열 이름의 뜻으로 맞는 것은?', ['첫 원소의 주소', '배열 길이', '마지막 원소', '모든 원소의 합'], 0, '그래서 포인터처럼 쓸 수 있어.'),
+  ]},
+]},
+{ id: 'ap', name: '웹·자료구조·SW공학', sub: '응용SW 기초기술', color: 'rose', subj: 'app', lessons: [
+  { id: 'w1', name: 'HTML·CSS·JS', tip: ['HTML은 구조, CSS는 모양, JS는 동작.', 'CSS 선택자: `#이름` 은 id, `.이름` 은 class.', '박스 모델 안에서 밖으로: content → padding → border → margin.'], qs: [
+    P('태그와 뜻을 맞춰 봐.', [['<h1>', '제목'], ['<a>', '링크'], ['<img>', '이미지'], ['<ul>', '순서 없는 목록']], '기본 태그야.'),
+    F('`<a>` 태그에서 이동할 주소를 넣는 속성을 쓰시오.', 'href', 'hypertext reference.'),
+    F('`<img>` 태그에서 이미지 경로를 넣는 속성을 쓰시오.', 'src', 'source.'),
+    P('CSS 선택자를 맞춰 봐.', [['#main', 'id가 main'], ['.box', 'class가 box'], ['p', '모든 p 태그'], ['*', '모든 요소']], 'id는 #, class는 점.'),
+    M('CSS `color` 속성이 바꾸는 것은?', ['글자색', '배경색', '테두리 굵기', '글자 크기'], 0, '배경은 background-color.'),
+    O('박스 모델을 안쪽부터 놓아 봐.', ['content', 'padding', 'border', 'margin'], [], 'margin이 가장 바깥이야.'),
+    M('`display: none` 의 효과는?', ['요소가 안 보이고 공간도 차지하지 않는다', '요소가 안 보이지만 공간은 남는다', '글자만 지운다', '요소를 복사한다'], 0, '공간이 남는 건 `visibility: hidden`.'),
+    js('console.log(1 + "2");', '12', '문자열과 더하면 이어 붙여.'),
+    js('let a = [1, 2];\na.push(3);\nconsole.log(a.length);', '3', '`push` 는 맨 뒤 추가.'),
+    js('console.log(3 === "3");', 'false', '`===` 는 타입까지 비교해.'),
+    M('DOM의 설명으로 맞는 것은?', ['HTML 문서를 객체 구조로 나타낸 것', '데이터베이스 종류', '서버 운영체제', '압축 방식'], 0, 'JS로 화면을 바꿀 때 쓰는 구조야.'),
+    M('시맨틱 태그가 아닌 것은?', ['<div>', '<nav>', '<header>', '<footer>'], 0, 'div는 의미 없는 묶음이야.'),
+    M('GET과 POST의 설명으로 맞는 것은?', ['GET은 값이 URL에 보인다', 'POST는 값이 URL에 보인다', 'GET은 파일 전송 전용이다', '둘은 완전히 같다'], 0, '중요한 값은 POST로 보내.'),
+    F('글자 크기를 정하는 CSS 속성을 쓰시오.', 'font-size', '`font-size: 16px`.'),
+  ]},
+  { id: 'ds1', name: '자료구조와 정렬', tip: ['스택은 나중에 넣은 게 먼저(LIFO), 큐는 먼저 넣은 게 먼저(FIFO).', '버블 정렬은 옆과 비교해 큰 값을 뒤로 보내. 선택 정렬은 최솟값을 찾아 앞으로.', '후위 표기는 숫자를 쌓다가 연산자를 만나면 두 개를 꺼내 계산해.'], qs: [
+    P('자료구조와 특징을 맞춰 봐.', [['스택', 'LIFO'], ['큐', 'FIFO'], ['DFS', '스택 사용'], ['BFS', '큐 사용']], '탐색과도 연결돼.'),
+    I('스택에 push 1, push 2, pop, push 3, pop, pop을 했다. 꺼낸 순서를 공백으로 띄워 쓰시오.', '2 3 1', '나중에 넣은 것부터 나와.'),
+    I('큐에 넣기 1, 넣기 2, 꺼내기, 넣기 3, 꺼내기를 했다. 꺼낸 값을 순서대로 공백으로 띄워 쓰시오.', '1 2', '먼저 넣은 것부터 나와.'),
+    P('트리 순회를 맞춰 봐.', [['전위', '나 → 왼쪽 → 오른쪽'], ['중위', '왼쪽 → 나 → 오른쪽'], ['후위', '왼쪽 → 오른쪽 → 나']], '"나"의 위치가 이름이야.'),
+    I('루트 A, 왼쪽 자식 B, 오른쪽 자식 C인 트리의 중위 순회 결과를 쓰시오.', 'BAC', '왼쪽, 나, 오른쪽.', { ci: 1 }),
+    I('루트 A, 왼쪽 자식 B, 오른쪽 자식 C인 트리의 후위 순회 결과를 쓰시오.', 'BCA', '왼쪽, 오른쪽, 나.', { ci: 1 }),
+    I('레벨이 1, 2, 3까지 있는 포화 이진 트리의 노드 수를 쓰시오.', '7', '1 + 2 + 4.'),
+    I('`[5, 2, 4, 1]` 을 오름차순 버블 정렬로 1회전한 결과를 공백으로 띄워 쓰시오.', '2 4 1 5', '5가 맨 뒤까지 밀려 가.'),
+    M('`[5, 2, 4, 1]` 을 오름차순 선택 정렬로 1회전한 결과는?', ['1 2 4 5', '2 4 1 5', '2 5 4 1', '1 5 4 2'], 0, '최솟값 1과 맨 앞 5를 바꿔.'),
+    M('이진 탐색의 전제 조건은?', ['데이터가 정렬되어 있어야 한다', '데이터가 홀수 개여야 한다', '문자열만 된다', '중복이 있어야 한다'], 0, '반씩 버리려면 순서가 있어야 해.'),
+    P('시간 복잡도를 맞춰 봐.', [['이진 탐색', 'O(log n)'], ['순차 탐색', 'O(n)'], ['버블 정렬', 'O(n²)'], ['퀵 정렬 평균', 'O(n log n)']], '자주 나오는 네 개.'),
+    I('후위 표기식 `3 4 + 2 *` 의 계산 결과를 쓰시오.', '14', '(3 + 4) × 2.'),
+    F('중위 표기식 `A+B*C` 를 후위 표기식으로 쓰시오.', 'ABC*+', '곱셈이 먼저라 BC*, 그다음 +.'),
+    M('연결 리스트의 설명으로 맞는 것은?', ['중간 삽입·삭제가 쉽지만 임의 접근은 느리다', '임의 접근이 배열보다 빠르다', '크기를 바꿀 수 없다', '포인터를 쓰지 않는다'], 0, '배열과 반대의 장단점이야.'),
+  ]},
+  { id: 'sw1', name: 'SW공학', tip: ['응집도는 높을수록, 결합도는 낮을수록 좋아.', '블랙박스는 기능만, 화이트박스는 내부 코드까지 보고 테스트해.', '폭포수는 순서대로, 애자일은 짧게 반복해.'], qs: [
+    O('폭포수 모델 순서대로 놓아 봐.', ['요구 분석', '설계', '구현', '테스트', '유지보수'], [], '위에서 아래로 흘러서 폭포수야.'),
+    M('애자일의 특징은?', ['짧게 반복하며 변화에 대응한다', '문서를 끝낸 뒤에만 코딩한다', '수정을 금지한다', '고객과 만나지 않는다'], 0, '스크럼이 대표적이야.'),
+    P('테스트 단계를 맞춰 봐.', [['단위', '모듈 하나'], ['통합', '모듈 간 연결'], ['시스템', '전체 동작'], ['인수', '사용자 확인']], '작은 것부터 큰 것으로.'),
+    M('블랙박스 테스트의 설명으로 맞는 것은?', ['내부 코드를 보지 않고 기능을 확인한다', '소스 코드 경로를 전부 따라간다', '하드웨어만 검사한다', '개발 전에만 한다'], 0, '내부까지 보면 화이트박스.'),
+    M('좋은 모듈 설계는?', ['응집도 높고 결합도 낮게', '응집도 낮고 결합도 높게', '둘 다 높게', '둘 다 낮게'], 0, '안은 똘똘 뭉치고, 밖과는 느슨하게.'),
+    P('객체지향 개념을 맞춰 봐.', [['캡슐화', '데이터와 기능을 묶고 숨김'], ['상속', '부모 기능을 물려받음'], ['다형성', '같은 이름, 다른 동작'], ['추상화', '핵심만 뽑아 표현']], '네 개 다 자주 나와.'),
+    M('UML 다이어그램이 아닌 것은?', ['간트 차트', '클래스 다이어그램', '시퀀스 다이어그램', '유스케이스 다이어그램'], 0, '간트 차트는 일정 관리 도구야.'),
+    M('싱글톤 패턴의 설명으로 맞는 것은?', ['객체를 하나만 만들어 함께 쓴다', '객체를 매번 새로 만든다', '상속을 금지한다', '데이터를 암호화한다'], 0, '생성 패턴이야.'),
+    M('형상 관리의 목적은?', ['소스 변경 이력을 관리한다', '화면 색을 통일한다', '서버 전원을 관리한다', '비밀번호를 바꾼다'], 0, 'Git이 대표적이야.'),
+    F('대표적인 분산 버전 관리 도구의 이름을 영문 소문자로 쓰시오.', 'git', 'SVN은 중앙 집중형이야.'),
+    M('API의 설명으로 맞는 것은?', ['프로그램끼리 기능을 주고받는 약속', '데이터베이스 테이블', '운영체제 종류', '테스트 단계'], 0, 'Application Programming Interface.'),
+    M('비기능 요구사항의 예는?', ['응답은 2초 안에', '회원 가입 기능', '게시글 작성 기능', '로그인 기능'], 0, '성능, 보안 같은 품질 조건이야.'),
+    M('리팩토링의 뜻은?', ['동작은 그대로 두고 코드 구조를 개선한다', '새 기능을 추가한다', '서버를 옮긴다', '버그를 일부러 넣는다'], 0, '겉은 그대로, 속만 정리.'),
+    P('MVC를 맞춰 봐.', [['Model', '데이터와 로직'], ['View', '화면'], ['Controller', '요청 처리·연결']], '역할을 나누는 구조야.'),
+  ]},
+]},
+];
+
+/* global UNITS */
+const KEY = 'ppiyak-code-v1';
+const DEF = { xp: 0, days: {}, l: {}, q: {}, mocks: [], goal: 20, exam: '', sound: true, tab: 'home' };
+const SR = [0, 1, 3, 7, 16];
+const SUBJ = { lang: '프로그래밍 언어', app: '응용SW 기초기술', sql: 'SQL 활용', sys: '정보시스템 기초기술' };
+const LESSON_LEN = 8;
+
+let S = load();
+let L = null;   // 진행 중인 레슨
+let E = null;   // 진행 중인 모의고사
+let sheet = null;
+let audio = null;
+
+/* ---------- 저장 ---------- */
+function load() {
+  try { return { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEF }; }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* 저장이 막힌 환경에서는 이번 창에서만 유지 */ } }
+
+/* ---------- 날짜 ---------- */
+const pad = n => String(n).padStart(2, '0');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => dstr(new Date());
+const addDays = (s, n) => { const [y, m, d] = s.split('-').map(Number); return dstr(new Date(y, m - 1, d + n)); };
+const dayDiff = (a, b) => { const p = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); }; return Math.round((p(a) - p(b)) / 864e5); };
+const dayOf = s => S.days[s] || { xp: 0, ok: 0 };
+const qualified = s => dayOf(s).ok >= 3;
+function streak() {
+  let d = today();
+  if (!qualified(d)) d = addDays(d, -1);
+  let n = 0;
+  while (qualified(d)) { n++; d = addDays(d, -1); }
+  return n;
+}
+
+/* ---------- 문제 목록 ---------- */
+const ALL = [];
+const LESSONS = [];
+UNITS.forEach(u => u.lessons.forEach(l => {
+  LESSONS.push({ ...l, unit: u });
+  l.qs.forEach((q, i) => { q.id = `${l.id}-${i}`; q.subj = u.subj; q.unit = u.id; q.lesson = l.id; q.lname = l.name; ALL.push(q); });
+}));
+const byId = id => ALL.find(q => q.id === id);
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const lessonDone = id => (S.l[id]?.n || 0) > 0;
+const currentLesson = () => LESSONS.find(l => !lessonDone(l.id));
+const dueQs = () => ALL.filter(q => { const s = S.q[q.id]; return s && s.due <= today(); }).sort((a, b) => S.q[a.id].box - S.q[b.id].box || S.q[b.id].wrong - S.q[a.id].wrong);
+
+function prep(q) {
+  if (q.k !== 'mc') return q;
+  const order = shuffle(q.o.map((t, i) => ({ t, i })));
+  return { ...q, o: order.map(x => x.t), a: order.findIndex(x => x.i === q.a) };
+}
+function pickFor(lesson, n) {
+  const rank = q => { const s = S.q[q.id]; return !s ? 0 : s.due <= today() ? 1 : 2 + s.box; };
+  return shuffle(lesson.qs).sort((a, b) => rank(a) - rank(b)).slice(0, n);
+}
+function recordSR(id, ok) {
+  const s = S.q[id] || { box: 0, due: today(), wrong: 0 };
+  if (ok) { s.box = Math.min(SR.length - 1, s.box + 1); s.due = addDays(today(), SR[s.box]); }
+  else { s.box = 0; s.due = today(); s.wrong++; }
+  S.q[id] = s;
+}
+function addDay(xp, ok) {
+  const t = today(), d = S.days[t] || { xp: 0, ok: 0 };
+  d.xp += xp; d.ok += ok; S.days[t] = d; S.xp += xp;
+}
+
+/* ---------- 화면 조각 ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const ICON = {
+  home: '<path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="currentColor"/>',
+  review: '<path d="M12 5a7 7 0 1 1-6.7 9h2.1A5 5 0 1 0 12 7v3L7.5 6 12 2z" fill="currentColor"/>',
+  exam: '<path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m2 7v2h8v-2zm0 4v2h8v-2z" fill="currentColor"/>',
+  chart: '<path d="M4 20V10h4v10zm6 0V4h4v16zm6 0v-7h4v7z" fill="currentColor"/>',
+  flame: '<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4.5 2.5-7 1.5 1 2 2.5 2 3.5C12 9 12.5 5 12 2" fill="currentColor"/>',
+  bolt: '<path d="M13.5 2 5 13.5h6L10 22l9-12h-6.5z" fill="currentColor"/>',
+  target: '<path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 3.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11m0 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5" fill="currentColor"/>',
+  heart: '<path d="M12 21s-8.5-5.2-8.5-11.3A4.7 4.7 0 0 1 12 7a4.7 4.7 0 0 1 8.5 2.7C20.5 15.8 12 21 12 21" fill="currentColor"/>',
+  star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" fill="currentColor"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  lock: '<path d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z" fill="currentColor"/>',
+  play: '<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5" fill="currentColor"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
+};
+const icon = n => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
+function chick(mood = 'idle') {
+  const eyes = mood === 'happy'
+    ? '<path d="M39 44q5-7 10 0M61 44q5-7 10 0" fill="none" stroke="#2b2100" stroke-width="4" stroke-linecap="round"/>'
+    : mood === 'sad'
+      ? '<circle cx="44" cy="45" r="4.5" fill="#2b2100"/><circle cx="66" cy="45" r="4.5" fill="#2b2100"/><path d="M37 39l11-5M73 39l-11-5" stroke="#2b2100" stroke-width="3.5" stroke-linecap="round"/>'
+      : '<circle cx="44" cy="44" r="5" fill="#2b2100"/><circle cx="66" cy="44" r="5" fill="#2b2100"/><circle cx="46" cy="42" r="1.600" fill="#fff"/><circle cx="68" cy="42" r="1.600" fill="#fff"/>';
+  const wings = mood === 'happy'
+    ? '<path d="M21 62q-14-8-11-22 11 4 18 15zM89 62q14-8 11-22-11 4-18 15z" fill="#f2b100"/>'
+    : '<path d="M20 60q-8 8-3 19 9-1 13-9zM90 60q8 8 3 19-9-1-13-9z" fill="#f2b100"/>';
+  return `<svg class="chick" viewBox="0 0 110 110" aria-hidden="true"><path d="M55 9q-3-7-8-5 3 3 2 7M57 9q4-7 9-4-4 3-4 7" fill="#f2b100"/>${wings}<path d="M42 96v8m-6 0h12M68 96v8m-6 0h12" stroke="#ef8a1d" stroke-width="4" stroke-linecap="round"/><ellipse cx="55" cy="56" rx="36" ry="43" fill="#ffc933"/><ellipse cx="55" cy="73" rx="22" ry="20" fill="#ffe08a"/>${eyes}<path d="M47 53q8-5 16 0-8 10-16 0" fill="#ef8a1d"/><circle cx="33" cy="56" r="5" fill="#ff9d7a" opacity=".6"/><circle cx="77" cy="56" r="5" fill="#ff9d7a" opacity=".6"/></svg>`;
+}
+const KW = {
+  python: 'def|return|if|elif|else|for|while|in|class|import|from|global|lambda|pass|break|continue|and|or|not|None|True|False|print',
+  java: 'public|private|protected|static|void|int|char|double|float|long|boolean|class|interface|abstract|extends|implements|new|return|if|else|for|while|do|switch|case|break|continue|default|try|catch|finally|this|super|final|String',
+  c: 'int|char|float|double|void|struct|return|if|else|for|while|do|switch|case|break|continue|sizeof|printf',
+  js: 'let|const|var|function|return|if|else|for|while|console',
+  sql: 'SELECT|FROM|WHERE|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|GROUP|BY|HAVING|ORDER|ASC|DESC|JOIN|LEFT|RIGHT|INNER|ON|AS|UNION|ALL|EXCEPT|COUNT|SUM|AVG|MAX|MIN|DISTINCT|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|TABLE|ALTER|ADD|INT',
+};
+function hl(line, lang) {
+  const com = lang === 'python' ? '#.*$' : lang === 'sql' ? '--.*$' : '//.*$';
+  const re = new RegExp(`("(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.)*')|(${com})|(____)|\\b(\\d+(?:\\.\\d+)?)\\b|\\b(${KW[lang] || 'zzzz'})\\b`, 'g');
+  let out = '', last = 0, m;
+  while ((m = re.exec(line))) {
+    out += esc(line.slice(last, m.index));
+    const t = esc(m[0]);
+    out += m[1] ? `<span class="t-s">${t}</span>` : m[2] ? `<span class="t-c">${t}</span>` : m[3] ? '<span class="blank">빈칸</span>' : m[4] ? `<span class="t-n">${t}</span>` : `<span class="t-k">${t}</span>`;
+    last = m.index + m[0].length;
+  }
+  return out + esc(line.slice(last));
+}
+function codeBlock(c, lang) {
+  return `<div class="code" tabindex="0">${c.split('\n').map((l, i) => `<div class="ln"><span class="no">${i + 1}</span><span class="tx">${hl(l, lang) || ' '}</span></div>`).join('')}</div>`;
+}
+function tables(tb) {
+  if (!tb) return '';
+  return `<div class="tbs">${tb.map(t => `<table class="tb"><caption>${esc(t.n)}</caption><tr>${t.h.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${t.r.map(r => `<tr>${r.map(v => v === null ? '<td class="null">NULL</td>' : `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table>`).join('')}</div>`;
+}
+const app = () => document.getElementById('app');
+
+/* ---------- 탭 화면 ---------- */
+function statsData() {
+  const t = dayOf(today());
+  return { streak: streak(), xp: S.xp, todayXp: t.xp, ok: t.ok, due: dueQs().length };
+}
+function dday() {
+  if (!S.exam) return null;
+  return dayDiff(S.exam, today());
+}
+function renderApp() {
+  if (L) return renderLesson();
+  if (E) return renderExam();
+  const d = statsData();
+  const nav = [['home', '코스', 'home'], ['review', '복습', 'review'], ['mock', '모의고사', 'exam'], ['stats', '기록', 'chart']];
+  const view = { home: viewHome, review: viewReview, mock: viewMock, stats: viewStats, result: viewResult }[S.tab] || viewHome;
+  app().innerHTML = `<div class="shell">
+    <nav class="side" aria-label="메뉴"><div class="logo">${chick('idle')}삐약코드</div>
+      ${nav.map(([k, n, i]) => `<button class="nav ${S.tab === k ? 'on' : ''}" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${icon(i)}<span>${n}</span>${k === 'review' && d.due ? `<span class="badge">${d.due}</span>` : ''}</button>`).join('')}
+    </nav>
+    <main class="main">
+      <div class="top-stats">
+        <div class="chip flame" title="연속 학습일">${icon('flame')}${d.streak}일</div>
+        <div class="chip bolt" title="누적 XP">${icon('bolt')}${d.xp}</div>
+        <div class="chip target" title="오늘 목표">${icon('target')}${Math.min(d.todayXp, S.goal)}<span class="muted">/${S.goal}</span></div>
+      </div>
+      ${view(d)}
+    </main>
+    <aside class="panel">${panel(d)}</aside>
+  </div>`;
+}
+function panel(d) {
+  const dd = dday();
+  return `<div class="card"><h3>${icon('flame')} 연속 학습</h3><div class="stat-big">${d.streak}일</div>
+      <p class="note">${d.ok >= 3 ? '오늘 몫은 끝났어.' : `오늘 ${3 - d.ok}문제만 더 맞히면 이어져.`}</p></div>
+    <div class="card"><h3>${icon('target')} 오늘 목표</h3><div class="bar" role="progressbar" aria-valuenow="${Math.min(d.todayXp, S.goal)}" aria-valuemax="${S.goal}"><i style="width:${Math.min(100, d.todayXp / S.goal * 100)}%"></i></div>
+      <p class="note" style="margin-top:8px">${d.todayXp} / ${S.goal} XP</p></div>
+    <div class="card"><h3>시험까지</h3><div class="stat-big">${dd === null ? '날짜 미정' : dd > 0 ? `D-${dd}` : dd === 0 ? 'D-Day' : '시험 지남'}</div>
+      <p class="note">${S.exam ? esc(S.exam) : '2027년 일정은 아직 공고 전이야. 공고가 뜨면 기록 탭에서 넣어 줘.'}</p></div>`;
+}
+function viewHome(d) {
+  const cur = currentLesson();
+  const needsFloor = d.ok < 3;
+  const offs = [0, 44, 66, 44, 0, -44, -66, -44];
+  let idx = 0;
+  const units = UNITS.map(u => {
+    const done = u.lessons.filter(l => lessonDone(l.id)).length;
+    const nodes = u.lessons.map(l => {
+      const isDone = lessonDone(l.id), isCur = cur && cur.id === l.id, locked = !isDone && !isCur;
+      const n = Math.min(3, S.l[l.id]?.n || 0), off = offs[idx++ % offs.length];
+      return `<div class="node-wrap" style="transform:translateX(${off}px)">
+        ${isCur ? '<span class="start-tag">시작</span>' : ''}
+        <button class="node ${locked ? 'locked' : ''} ${isCur ? 'current' : ''}" data-lesson="${l.id}" aria-label="${esc(l.name)} ${isDone ? '완료' : locked ? '잠김' : '시작'}">${icon(isDone ? 'check' : locked ? 'lock' : 'play')}</button>
+        ${isDone ? `<div class="stars" aria-label="${n}회 완료">${[0, 1, 2].map(i => `<span class="${i < n ? '' : 'off'}">${icon('star')}</span>`).join('')}</div>` : ''}
+        <div class="node-name ${locked ? 'locked' : ''}">${esc(l.name)}</div></div>`;
+    }).join('');
+    return `<section class="unit u-${u.color}"><div class="unit-head"><div><h2>${esc(u.name)}</h2><p>${esc(u.sub)}</p></div><b>${done} / ${u.lessons.length}</b></div><div class="path">${nodes}</div></section>`;
+  }).join('');
+  return `${needsFloor ? `<div class="nudge">${chick('idle')}<div><b>하기 싫은 날은 3문제만</b><span>맞히면 오늘 기록이 이어져.</span></div><button class="btn small" data-act="quick">3문제</button></div>` : ''}${units}`;
+}
+function viewReview(d) {
+  const due = dueQs();
+  const wrongTotal = ALL.filter(q => S.q[q.id]?.wrong).length;
+  return `<h1 class="page-title">복습</h1><p class="page-sub">틀린 문제는 다음 날, 맞힌 문제는 1일, 3일, 7일, 16일 간격으로 다시 나와.</p>
+    ${due.length ? `<div class="card" style="text-align:center"><div class="stat-big">${due.length}문제</div><p class="note" style="margin-bottom:14px">오늘 복습할 차례야. 한 번에 최대 10문제씩 풀어.</p><button class="btn wide" data-act="review">복습 시작</button></div>`
+      : `<div class="empty">${chick('happy')}<h2>오늘 복습 끝</h2><p>${Object.keys(S.q).length ? '다음 복습은 날짜가 되면 여기 나타나.' : '레슨을 풀면 복습할 문제가 쌓여.'}</p></div>`}
+    <div class="section"><h2>자주 틀린 문제</h2>${wrongTotal ? ALL.filter(q => S.q[q.id]?.wrong).sort((a, b) => S.q[b.id].wrong - S.q[a.id].wrong).slice(0, 5).map(q => `<div class="review-item"><b>${S.q[q.id].wrong}회</b> · ${esc(q.lname)}<div>${fmt(q.q)}</div>${q.c ? codeBlock(q.c, q.lang) : ''}<div class="fb-ans">정답: ${answerText(q)}</div></div>`).join('') : '<p class="note">아직 없어.</p>'}</div>`;
+}
+function viewMock() {
+  const hist = S.mocks.slice(-5).reverse();
+  return `<h1 class="page-title">모의고사</h1><p class="page-sub">필기는 과목별로 같은 수를 뽑아. 실제 과목별 문항 수는 공개 자료로 확인 못 했어.</p>
+    <div class="card mock-card"><div><h3>필기 실전</h3><p>60문항 · 60분 · 60점 이상 합격</p></div><button class="btn small" data-mock="w60">시작</button></div>
+    <div class="card mock-card"><div><h3>필기 맛보기</h3><p>20문항 · 20분</p></div><button class="btn small ghost" data-mock="w20">시작</button></div>
+    <div class="card mock-card"><div><h3>실기 필답 연습</h3><p>12문항 · 90분 · 답을 직접 입력</p></div><button class="btn small" data-mock="p12">시작</button></div>
+    <p class="note">실기는 2027년부터 필답형이야. 종이에 먼저 풀고 답만 입력하면 실제 시험과 가까워져. 실제 문항 수, 부분 점수 기준은 확인 못 했어.</p>
+    <div class="section"><h2>지난 점수</h2>${hist.length ? `<div class="rows">${hist.map(m => `<div class="row"><span>${esc(m.d)} · ${esc(m.name)}</span><b class="${m.score >= 60 ? 'pass' : 'fail'}">${m.score}점</b></div>`).join('')}</div>` : '<p class="note">아직 없어. 40점이 55점 되는 걸 여기서 보게 될 거야.</p>'}</div>`;
+}
+function viewStats(d) {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(today(), i - 6));
+  const max = Math.max(S.goal, ...days.map(x => dayOf(x).xp));
+  const subj = Object.entries(SUBJ).map(([k, n]) => {
+    const qs = ALL.filter(q => q.subj === k), solid = qs.filter(q => (S.q[q.id]?.box || 0) >= 2).length;
+    const pct = Math.round(solid / qs.length * 100);
+    return `<div class="sbj"><div class="sbj-top"><span>${n}</span><span class="muted">${solid} / ${qs.length}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+  }).join('');
+  const mon = new Date().getMonth() + 1;
+  const plan = [
+    ['11월', 'Python·Java 코드 읽기, SQL', mon === 11],
+    ['12월', '필기 책 1권 빠르게, 나머지 과목 레슨', mon === 12],
+    ['1월', '접수하고 필기 모의고사 반복', mon === 1],
+    ['필기 후', 'Linux, 실기 필답 연습', mon >= 2 && mon <= 4],
+  ];
+  return `<h1 class="page-title">기록</h1><p class="page-sub">이 기기의 브라우저에 저장돼. 폰과 PC 기록은 따로야.</p>
+    <div class="card"><h3>최근 7일 XP</h3><div class="week">${days.map(x => { const v = dayOf(x).xp; return `<div class="${v ? '' : 'zero'}"><span>${v || ''}</span><i style="height:${Math.max(3, v / max * 80)}px"></i><span>${Number(x.slice(8))}일</span></div>`; }).join('')}</div></div>
+    <div class="section"><h2>과목별로 익힌 문제</h2>${subj}<p class="note">두 번 이상 연달아 맞힌 문제만 세.</p></div>
+    <div class="section"><h2>코스 순서</h2><div class="rows">${plan.map(p => `<div class="row ${p[2] ? 'now' : ''}"><b>${p[0]}</b><span style="text-align:right">${p[1]}</span></div>`).join('')}</div>
+      <p class="note" style="margin-top:8px">2026년 패턴(1월 필기, 3~4월 실기)을 보고 잡은 내 추정이야. 2027년 일정은 큐넷 공고로 꼭 확인해.</p></div>
+    <div class="section"><h2>설정</h2>
+      <div class="rows">
+        <div class="row"><span>시험일</span><input type="date" id="examDate" value="${esc(S.exam)}" aria-label="시험일"></div>
+        <div class="row"><span>하루 목표</span><div class="seg">${[20, 40, 60].map(g => `<button class="${S.goal === g ? 'on' : ''}" data-goal="${g}">${g}</button>`).join('')}</div></div>
+        <div class="row"><span>효과음</span><div class="seg"><button class="${S.sound ? 'on' : ''}" data-sound="1">켜기</button><button class="${S.sound ? '' : 'on'}" data-sound="0">끄기</button></div></div>
+        <div class="row"><span>진행 파일</span><div class="seg"><button data-act="export">내보내기</button><button data-act="import">불러오기</button></div></div>
+        <div class="row"><span>처음부터 다시</span><div class="seg"><button data-act="reset">초기화</button></div></div>
+      </div><input type="file" id="importFile" accept="application/json" hidden></div>
+    <div class="section"><h2>문제에 대해</h2>
+      <p class="note">문제는 공단 예시문제의 유형을 참고해 새로 쓴 연습문제야. 기출문제가 아니야.</p>
+      <p class="note">Python, JavaScript, SQL 문제는 정답을 실제로 실행해서 확인했어. Java, C 문제는 컴파일러로 돌려 보지 못하고 직접 검토만 했어.</p>
+      <p class="note">2027년 출제기준의 세부 항목은 확인 못 했어. 이론 범위는 교재와 큐넷 출제기준을 함께 봐.</p></div>`;
+}
+
+/* ---------- 시트 ---------- */
+function renderSheet() {
+  if (sheet.kind === 'lesson') {
+    const l = LESSONS.find(x => x.id === sheet.id), isDone = lessonDone(l.id), isCur = currentLesson()?.id === l.id;
+    return `<div class="overlay" data-close="1"><div class="sheet u-${l.unit.color}" role="dialog" aria-modal="true" aria-label="${esc(l.name)}">
+      <p class="q-tag">${esc(l.unit.name)}</p><h2>${esc(l.name)}</h2>
+      <p class="muted" style="margin:4px 0 14px">${!isDone && !isCur ? '앞 레슨이 남았지만, 아는 내용이면 먼저 풀어도 돼.' : `${l.qs.length}문제 중 ${LESSON_LEN}문제를 뽑아서 풀어.`}</p>
+      <button class="btn wide" data-start="${l.id}" id="sheetGo">${isDone ? '한 번 더 풀기' : '시작'}</button>
+      <button class="btn wide ghost" data-tip="${l.id}">요약 먼저 보기</button></div></div>`;
+  }
+  if (sheet.kind === 'tip') {
+    const l = LESSONS.find(x => x.id === sheet.id);
+    return `<div class="overlay" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(l.name)} 요약"><h2>${esc(l.name)}</h2>
+      <ul class="tip-list">${l.tip.map(t => `<li>${fmt(t)}</li>`).join('')}</ul>
+      <button class="btn wide" style="margin-top:16px" data-start="${l.id}" id="sheetGo">문제 풀기</button></div></div>`;
+  }
+  if (sheet.kind === 'confirm') {
+    return `<div class="overlay"><div class="sheet" role="alertdialog" aria-modal="true" aria-label="${esc(sheet.title)}"><h2>${esc(sheet.title)}</h2><p class="muted" style="margin:6px 0 16px">${esc(sheet.body)}</p>
+      <button class="btn wide" data-act="confirm-no" id="sheetGo">${esc(sheet.no)}</button><button class="btn wide ghost" data-act="confirm-yes">${esc(sheet.yes)}</button></div></div>`;
+  }
+  if (sheet.kind === 'grid') {
+    return `<div class="overlay" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="문제 목록"><h2>문제 목록</h2><div class="grid-nav">${E.qs.map((q, i) => `<button class="${isAnswered(E.ans[i]) ? 'ans' : ''} ${i === E.i ? 'cur' : ''}" data-goto="${i}">${i + 1}</button>`).join('')}</div>
+      <button class="btn wide" data-act="exam-submit">제출하기</button></div></div>`;
+  }
+  return '';
+}
+function openSheet(s) {
+  sheet = s;
+  document.querySelector('.overlay')?.remove();
+  document.body.insertAdjacentHTML('beforeend', '<div id="sheetHost"></div>');
+  const host = document.getElementById('sheetHost');
+  host.outerHTML = renderSheet();
+  document.getElementById('sheetGo')?.focus();
+}
+function closeSheet() { sheet = null; document.querySelector('.overlay')?.remove(); }
+function confirmBox(title, body, yes, no, onYes) { confirmFn = onYes; openSheet({ kind: 'confirm', title, body, yes, no }); }
+let confirmFn = null;
+
+/* ---------- 레슨 ---------- */
+function startSession(mode, qs, lesson) {
+  closeSheet();
+  L = { mode, lesson, queue: qs.map(prep), total: qs.length, done: 0, hearts: 5, st: 'ask', xp: 0, firstTry: 0, wrongIds: new Set(), fresh: true, showTip: mode === 'lesson' && lesson && !lessonDone(lesson.id), hit: false };
+  setupQ();
+  renderLesson();
+}
+function setupQ() {
+  const q = L.queue[0];
+  L.st = 'ask'; L.input = ''; L.sel = null; L.fresh = true; L.overridden = false;
+  if (!q) return;
+  L.isRetry = L.wrongIds.has(q.id);
+  if (q.k === 'ord') { L.pool = shuffle([...q.a, ...(q.extra || [])].map((t, i) => ({ t, i }))); L.chosen = []; }
+  if (q.k === 'match') { L.ml = shuffle(q.pairs.map((p, i) => ({ t: p[0], i }))); L.mr = shuffle(q.pairs.map((p, i) => ({ t: p[1], i }))); L.mSel = null; L.mDone = new Set(); L.mMiss = 0; }
+}
+function questionHtml(q, locked) {
+  let body = '';
+  if (q.k === 'mc') {
+    body = `<div class="opts">${q.o.map((t, i) => {
+      let c = '';
+      if (locked) { if (i === q.a) c = 'right'; else if (i === L.sel) c = 'wrong'; } else if (i === L.sel) c = 'sel';
+      return `<button class="opt ${c}" data-opt="${i}" ${locked ? 'disabled' : ''}><span class="n">${i + 1}</span><span>${fmt(t)}</span></button>`;
+    }).join('')}</div>`;
+  } else if (q.k === 'in') {
+    const c = !locked ? '' : (L.st === 'right' ? 'right' : 'wrong');
+    body = `<input class="answer ${c}" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="답을 입력해" aria-label="답" value="${esc(L.input)}" ${locked ? 'disabled' : ''}>${locked ? '' : '<p class="hint-line">Enter로 확인</p>'}`;
+  } else if (q.k === 'ord') {
+    body = `<div class="slot" aria-label="내가 고른 순서">${L.chosen.map((pi, n) => `<button class="tok" data-unpick="${n}" ${locked ? 'disabled' : ''}>${esc(L.pool[pi].t)}</button>`).join('')}</div>
+      <div class="bank">${L.pool.map((p, i) => `<button class="tok ${L.chosen.includes(i) ? 'used' : ''}" data-pick="${i}" ${locked ? 'disabled' : ''}>${esc(p.t)}</button>`).join('')}</div>`;
+  } else if (q.k === 'match') {
+    const col = (arr, side) => `<div class="col">${arr.map(x => { const d = L.mDone.has(x.i); return `<button class="pr ${side === 'l' ? 'key' : ''} ${d ? 'done' : ''} ${L.mSel && L.mSel.side === side && L.mSel.i === x.i ? 'sel' : ''}" data-m="${side}:${x.i}" ${d || locked ? 'disabled' : ''}>${esc(x.t)}</button>`; }).join('')}</div>`;
+    body = `<div class="pairs">${col(L.ml, 'l')}${col(L.mr, 'r')}</div>`;
+  }
+  return `<div class="q-text">${fmt(q.q)}</div>${tables(q.tb)}${q.c ? codeBlock(q.c, q.lang) : ''}${body}`;
+}
+function canCheck(q) {
+  if (q.k === 'mc') return L.sel !== null;
+  if (q.k === 'in') return L.input.trim() !== '';
+  if (q.k === 'ord') return L.chosen.length > 0;
+  return false;
+}
+function answerText(q) {
+  if (q.k === 'mc') return fmt(q.o[q.a]);
+  if (q.k === 'in') return `<code>${esc(q.a[0])}</code>`;
+  if (q.k === 'ord') return `<code>${esc(q.a.join(' '))}</code>`;
+  return q.pairs.map(p => `${esc(p[0])} = ${esc(p[1])}`).join(', ');
+}
+function renderLesson() {
+  if (L.result) return renderDone();
+  const pct = Math.round(L.done / L.total * 100);
+  if (L.showTip) {
+    const l = L.lesson;
+    app().innerHTML = `<div class="lesson u-${l.unit.color}"><div class="l-top"><button class="x" data-act="quit" aria-label="나가기">${icon('x')}</button><div class="bar"><i style="width:0"></i></div></div>
+      <div class="l-body"><div class="l-inner tip-page enter">${chick('idle')}<h2>${esc(l.name)}</h2><p class="muted">30초 요약부터 보고 시작하자.</p><ul class="tip-list">${l.tip.map(t => `<li>${fmt(t)}</li>`).join('')}</ul></div></div>
+      <div class="l-foot"><div class="foot-in"><button class="btn wide" data-act="tip-go" id="goBtn">문제 풀기</button></div></div></div>`;
+    document.getElementById('goBtn').focus();
+    return;
+  }
+  const q = L.queue[0], locked = L.st !== 'ask';
+  const foot = locked
+    ? `<div class="l-foot fb ${L.st}"><div class="foot-in"><div class="fb-head">${chick(L.st === 'right' ? 'happy' : 'sad')}<div><div class="fb-title">${L.st === 'right' ? (L.mMiss ? '끝까지 맞췄어' : praise()) : '아깝다'}</div>
+        <div class="fb-text">${L.st === 'wrong' ? `<div class="fb-ans">정답: ${answerText(q)}</div>` : ''}<div>${fmt(q.e)}</div></div></div></div>
+        <div class="foot-row">${L.st === 'wrong' && q.k === 'in' && !L.overridden ? '<button class="link" data-act="override">내 답도 맞아</button>' : ''}<button class="btn ${L.st === 'right' ? 'ok' : 'no'}" data-act="next" id="goBtn">계속</button></div></div></div>`
+    : q.k === 'match'
+      ? '<div class="l-foot"><div class="foot-in"><p class="muted" style="text-align:center;padding:12px 0">왼쪽과 오른쪽을 눌러 짝을 맞춰.</p></div></div>'
+      : `<div class="l-foot"><div class="foot-in"><button class="btn wide" data-act="check" id="checkBtn" ${canCheck(q) ? '' : 'disabled'}>확인</button></div></div>`;
+  app().innerHTML = `<div class="lesson"><div class="l-top"><button class="x" data-act="quit" aria-label="나가기">${icon('x')}</button>
+      <div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      <div class="hearts ${L.hit ? 'hit' : ''}" aria-label="하트 ${L.hearts}개">${icon('heart')}${L.hearts}</div></div>
+    <div class="l-body"><div class="l-inner ${L.fresh ? 'enter' : ''} ${L.shake ? 'shake' : ''}">${L.isRetry ? '<p class="q-tag">다시 도전</p>' : `<p class="q-tag">${esc(q.lname)}</p>`}${questionHtml(q, locked)}</div></div>${foot}</div>`;
+  L.fresh = false; L.hit = false; L.shake = false;
+  if (locked) document.getElementById('goBtn')?.focus();
+  else if (q.k === 'in') document.getElementById('ans')?.focus();
+}
+const PRAISE = ['맞았어!', '좋아!', '바로 그거야!', '정확해!', '잘하는데?'];
+const praise = () => PRAISE[Math.floor(Math.random() * PRAISE.length)];
+function norm(s, ci) {
+  let t = String(s).replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim().replace(/\s+/g, ' ').replace(/\s*,\s*/g, ',').replace(/;$/, '').trim();
+  return ci ? t.toLowerCase() : t;
+}
+function isRightIn(q, v) { return q.a.some(a => norm(a, q.ci) === norm(v, q.ci)); }
+function check() {
+  const q = L.queue[0];
+  if (L.st !== 'ask' || !canCheck(q)) return;
+  let ok = false;
+  if (q.k === 'mc') ok = L.sel === q.a;
+  if (q.k === 'in') ok = isRightIn(q, L.input);
+  if (q.k === 'ord') ok = L.chosen.map(i => L.pool[i].t).join('\u0001') === q.a.join('\u0001');
+  settle(q, ok);
+}
+function settle(q, ok) {
+  const first = !L.wrongIds.has(q.id);
+  recordSR(q.id, ok);
+  if (ok) {
+    const gain = first ? 2 : 1;
+    L.xp += gain; L.done++; if (first) L.firstTry++;
+    addDay(gain, 1);
+    L.st = 'right'; beep([660, 880]);
+  } else {
+    L.wrongIds.add(q.id); L.hearts--; L.hit = true; L.st = 'wrong'; beep([220, 170]);
+  }
+  save();
+  renderLesson();
+}
+function override() {
+  const q = L.queue[0];
+  L.hearts++; L.overridden = true; L.done++; L.st = 'right'; L.xp += 1;
+  S.q[q.id].wrong = Math.max(0, S.q[q.id].wrong - 1);
+  recordSR(q.id, true); addDay(1, 1); L.wrongIds.delete(q.id); save();
+  renderLesson();
+}
+function nextQ() {
+  const q = L.queue.shift();
+  if (L.st === 'wrong') L.queue.push(prep(byIdFresh(q)));
+  if (L.hearts <= 0) { L.result = { fail: true }; return renderLesson(); }
+  if (!L.queue.length) return finishLesson();
+  setupQ();
+  renderLesson();
+}
+const byIdFresh = q => byId(q.id);
+function finishLesson() {
+  const perfect = L.wrongIds.size === 0;
+  let bonus = L.mode === 'quick' ? 1 : 5;
+  if (perfect && L.mode !== 'quick') bonus += 5;
+  addDay(bonus, 0); L.xp += bonus;
+  if (L.mode === 'lesson') { const r = S.l[L.lesson.id] || { n: 0 }; r.n++; S.l[L.lesson.id] = r; }
+  save();
+  L.result = { perfect, acc: Math.round(L.firstTry / L.total * 100) };
+  beep([523, 659, 784, 1047]);
+  renderLesson();
+  if (perfect || L.mode === 'lesson') confetti();
+}
+function renderDone() {
+  const r = L.result, l = L.lesson;
+  if (r.fail) {
+    app().innerHTML = `<div class="lesson"><div class="l-body"><div class="done-page">${chick('sad')}<h1>하트를 다 썼어</h1><p class="muted">틀린 문제는 복습 탭에 넣어 뒀어. 다시 풀면 금방 익숙해져.</p>
+      <button class="btn wide" data-act="retry" id="goBtn">다시 도전</button><button class="link" data-act="leave">코스로 돌아가기</button></div></div></div>`;
+  } else {
+    const d = statsData();
+    const title = L.mode === 'quick' ? '오늘 몫 끝!' : L.mode === 'review' ? '복습 끝!' : r.perfect ? '하나도 안 틀렸어!' : '레슨 완료!';
+    app().innerHTML = `<div class="lesson"><div class="l-body"><div class="done-page">${chick('happy')}<h1>${title}</h1>
+      <div class="tiles"><div class="tile" style="--t:var(--brand-dark)"><b>XP</b><span>+${L.xp}</span></div><div class="tile" style="--t:var(--ok-dark)"><b>한 번에 맞힘</b><span>${r.acc}%</span></div><div class="tile" style="--t:var(--orange-d)"><b>연속</b><span>${d.streak}일</span></div></div>
+      <button class="btn wide" data-act="leave" id="goBtn">계속</button></div></div></div>`;
+  }
+  document.getElementById('goBtn')?.focus();
+}
+function confetti() {
+  const colors = ['#ffc933', '#2c7be0', '#ee7426', '#0d9e9e', '#e04f7d', '#7857e0'];
+  for (let i = 0; i < 44; i++) {
+    const c = document.createElement('i');
+    c.className = 'conf';
+    c.style.cssText = `left:${Math.random() * 100}vw;background:${colors[i % 6]};--d:${1.2 + Math.random() * 1.1}s;--x:${(Math.random() - .5) * 140}px;--r:${Math.random() * 720}deg;animation-delay:${Math.random() * .25}s`;
+    document.body.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
+  }
+}
+function beep(seq) {
+  if (!S.sound) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    seq.forEach((f, i) => {
+      const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * .09;
+      o.frequency.value = f; o.type = 'triangle';
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + .16);
+      o.connect(g).connect(audio.destination); o.start(t); o.stop(t + .17);
+    });
+  } catch { /* 소리 없이 진행 */ }
+}
+function quick() {
+  const due = dueQs();
+  const cur = currentLesson() || LESSONS[Math.floor(Math.random() * LESSONS.length)];
+  const qs = [...due, ...pickFor(cur, 3)].slice(0, 3);
+  startSession('quick', qs, cur);
+}
+function pickMatch(side, i) {
+  if (!L.mSel || L.mSel.side === side) { L.mSel = L.mSel && L.mSel.side === side && L.mSel.i === i ? null : { side, i }; return renderLesson(); }
+  if (L.mSel.i === i) {
+    L.mDone.add(i); L.mSel = null; beep([700]);
+    const q = L.queue[0];
+    if (L.mDone.size === q.pairs.length) return settleMatch(q);
+    return renderLesson();
+  }
+  const other = L.mSel; L.mSel = null;
+  if (!L.mMiss) { L.hearts--; L.hit = true; L.wrongIds.add(L.queue[0].id); }
+  L.mMiss++; beep([220, 170]);
+  renderLesson();
+  [`${side}:${i}`, `${other.side}:${other.i}`].forEach(k => {
+    const el = document.querySelector(`[data-m="${k}"]`);
+    if (el) { el.classList.add('bad'); setTimeout(() => el.classList.remove('bad'), 340); }
+  });
+}
+function settleMatch(q) {
+  const clean = !L.mMiss;
+  recordSR(q.id, clean);
+  const gain = clean ? 2 : 1;
+  L.xp += gain; L.done++; if (clean) L.firstTry++;
+  addDay(gain, 1); L.st = 'right'; beep([660, 880]); save();
+  renderLesson();
+}
+
+/* ---------- 모의고사 ---------- */
+function toMC(q) {
+  if (q.k === 'mc') return prep(q);
+  const n = Number(q.a[0]);
+  const step = Number.isInteger(n) ? 1 : .5;
+  const cand = shuffle([n + step, n + 2 * step, n - step, n + 3 * step, n * 2].filter(x => x >= 0 && x !== n));
+  const o = shuffle([n, ...[...new Set(cand)].slice(0, 3)].map(String));
+  return { ...q, k: 'mc', o, a: o.indexOf(String(n)) };
+}
+const isNumIn = q => q.k === 'in' && /^\d+(\.\d+)?$/.test(q.a[0]) && q.c;
+function startMock(type) {
+  closeSheet();
+  let qs = [], mins, name;
+  if (type === 'p12') {
+    const take = (pre, n) => shuffle(ALL.filter(q => q.k === 'in' && pre.includes(q.lesson.slice(0, 2)))).slice(0, n);
+    qs = shuffle([...take(['lx'], 2), ...take(['py'], 4), ...take(['jv'], 3), ...take(['sq'], 3)]);
+    mins = 90; name = '실기 필답';
+  } else {
+    const each = type === 'w60' ? 15 : 5;
+    for (const k of Object.keys(SUBJ)) {
+      const pool = shuffle(ALL.filter(q => q.subj === k && (q.k === 'mc' || isNumIn(q)))).slice(0, each);
+      qs.push(...pool.map(toMC));
+    }
+    qs = shuffle(qs);
+    mins = type === 'w60' ? 60 : 20; name = type === 'w60' ? '필기 실전' : '필기 맛보기';
+  }
+  E = { type, name, qs, ans: qs.map(() => null), i: 0, endAt: Date.now() + mins * 6e4 };
+  E.timer = setInterval(tickExam, 1000);
+  renderExam();
+}
+const isAnswered = v => v !== null && v !== '';
+function fmtLeft() {
+  const s = Math.max(0, Math.round((E.endAt - Date.now()) / 1000));
+  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+}
+function tickExam() {
+  if (!E) return;
+  const el = document.getElementById('timer');
+  if (el) { el.textContent = fmtLeft(); el.classList.toggle('low', E.endAt - Date.now() < 3e5); }
+  if (Date.now() >= E.endAt) submitExam();
+}
+function renderExam() {
+  const q = E.qs[E.i], v = E.ans[E.i], n = E.qs.length, ans = E.ans.filter(isAnswered).length;
+  const body = q.k === 'mc'
+    ? `<div class="opts">${q.o.map((t, i) => `<button class="opt ${v === i ? 'sel' : ''}" data-eopt="${i}"><span class="n">${i + 1}</span><span>${fmt(t)}</span></button>`).join('')}</div>`
+    : `<input class="answer" id="eans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="답을 입력해" aria-label="답" value="${esc(v ?? '')}">`;
+  app().innerHTML = `<div class="lesson"><div class="l-top"><button class="x" data-act="exam-quit" aria-label="나가기">${icon('x')}</button>
+      <div class="bar"><i style="width:${ans / n * 100}%"></i></div><div class="exam-timer" id="timer">${fmtLeft()}</div></div>
+    <div class="l-body"><div class="l-inner"><p class="q-tag">${E.i + 1} / ${n} · ${SUBJ[q.subj]}</p><div class="q-text">${fmt(q.q)}</div>${tables(q.tb)}${q.c ? codeBlock(q.c, q.lang) : ''}${body}</div></div>
+    <div class="l-foot"><div class="foot-in"><div class="foot-row"><button class="btn ghost" data-act="exam-prev" ${E.i ? '' : 'disabled'}>이전</button><button class="btn ghost" data-act="exam-grid">${ans}/${n}</button>
+      ${E.i < n - 1 ? '<button class="btn" data-act="exam-next">다음</button>' : '<button class="btn ok" data-act="exam-submit">제출</button>'}</div></div></div></div>`;
+  document.getElementById('eans')?.focus();
+  tickExam();
+}
+function trySubmit() {
+  const left = E.ans.filter(v => !isAnswered(v)).length;
+  if (left) confirmBox(`${left}문제가 비어 있어`, '빈 문제는 틀린 걸로 쳐. 제출할까?', '제출', '더 풀기', submitExam);
+  else submitExam();
+}
+function submitExam() {
+  clearInterval(E.timer);
+  closeSheet();
+  let right = 0; const by = {}, wrong = [];
+  E.qs.forEach((q, i) => {
+    const v = E.ans[i], ok = q.k === 'mc' ? v === q.a : isAnswered(v) && isRightIn(q, v);
+    (by[q.subj] = by[q.subj] || { r: 0, n: 0 }).n++;
+    if (ok) { right++; by[q.subj].r++; } else wrong.push({ q, v });
+    recordSR(q.id, ok);
+  });
+  const score = Math.round(right / E.qs.length * 100);
+  S.mocks.push({ d: today(), name: E.name, score, right, n: E.qs.length });
+  addDay(Math.min(30, right), right);
+  S.tab = 'result';
+  S.lastResult = { name: E.name, score, right, n: E.qs.length, by, wrong: wrong.map(w => ({ id: w.q.id, v: w.q.k === 'mc' && w.v !== null ? w.q.o[w.v] : w.v })) };
+  save();
+  E = null;
+  renderApp();
+  if (score >= 60) { beep([523, 659, 784, 1047]); confetti(); }
+}
+function viewResult() {
+  const r = S.lastResult;
+  if (!r) return viewMock();
+  const pass = r.score >= 60;
+  return `<div class="result-top">${chick(pass ? 'happy' : 'sad')}<div class="result-score ${pass ? 'pass' : 'fail'}">${r.score}점</div><p class="muted">${esc(r.name)} · ${r.right} / ${r.n} · ${pass ? '60점 넘었어!' : `합격선까지 ${60 - r.score}점`}</p></div>
+    <div class="section"><h2>과목별</h2>${Object.entries(r.by).map(([k, v]) => `<div class="sbj"><div class="sbj-top"><span>${SUBJ[k]}</span><span class="muted">${v.r} / ${v.n}</span></div><div class="bar"><i style="width:${v.r / v.n * 100}%"></i></div></div>`).join('')}</div>
+    <div class="section"><h2>틀린 문제 ${r.wrong.length}개</h2><p class="note" style="margin-bottom:10px">복습 탭에도 넣어 뒀어.</p>
+      ${r.wrong.map(w => { const q = byId(w.id); return `<div class="review-item"><div><b>${fmt(q.q)}</b></div>${tables(q.tb)}${q.c ? codeBlock(q.c, q.lang) : ''}<div class="fail">내 답: ${isAnswered(w.v ?? '') ? fmt(String(w.v)) : '안 씀'}</div><div class="fb-ans">정답: ${answerText(q)}</div><div class="note">${fmt(q.e)}</div></div>`; }).join('') || '<p class="note">없어. 대단한데?</p>'}</div>
+    <button class="btn wide" data-tab="mock" style="margin-top:12px">모의고사로 돌아가기</button>`;
+}
+
+/* ---------- 입력 ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab],[data-lesson],[data-start],[data-tip],[data-act],[data-opt],[data-pick],[data-unpick],[data-m],[data-mock],[data-eopt],[data-goto],[data-goal],[data-sound]');
+  if (!t) {
+    if (e.target.matches('.overlay[data-close]')) closeSheet();
+    return;
+  }
+  const d = t.dataset;
+  if (d.tab) { S.tab = d.tab; save(); renderApp(); window.scrollTo(0, 0); return; }
+  if (d.lesson) return openSheet({ kind: 'lesson', id: d.lesson });
+  if (d.tip) return openSheet({ kind: 'tip', id: d.tip });
+  if (d.start) { const l = LESSONS.find(x => x.id === d.start); startSession('lesson', pickFor(l, LESSON_LEN), l); if (sheetTipSeen(d.start)) { L.showTip = false; renderLesson(); } return; }
+  if (d.mock) return startMock(d.mock);
+  if (d.goal) { S.goal = Number(d.goal); save(); return renderApp(); }
+  if (d.sound) { S.sound = d.sound === '1'; save(); return renderApp(); }
+  if (d.opt !== undefined) { if (L.st === 'ask') { L.sel = Number(d.opt); renderLesson(); } return; }
+  if (d.pick !== undefined) { L.chosen.push(Number(d.pick)); return renderLesson(); }
+  if (d.unpick !== undefined) { L.chosen.splice(Number(d.unpick), 1); return renderLesson(); }
+  if (d.m) { const [side, i] = d.m.split(':'); return pickMatch(side, Number(i)); }
+  if (d.eopt !== undefined) { E.ans[E.i] = Number(d.eopt); return renderExam(); }
+  if (d.goto !== undefined) { E.i = Number(d.goto); closeSheet(); return renderExam(); }
+  const acts = {
+    quick, check,
+    review() { startSession('review', dueQs().slice(0, 10), null); },
+    next: nextQ,
+    override,
+    'tip-go'() { L.showTip = false; L.fresh = true; renderLesson(); },
+    quit() {
+      if (L.done === 0 && L.st === 'ask') { L = null; return renderApp(); }
+      confirmBox('지금 나갈 거야?', '맞힌 문제의 XP는 남지만 이 레슨은 완료로 안 쳐.', '나가기', '계속 풀기', () => { L = null; closeSheet(); renderApp(); });
+    },
+    leave() { L = null; S.tab = 'home'; renderApp(); },
+    retry() { const m = L.mode, l = L.lesson; const qs = m === 'lesson' ? pickFor(l, LESSON_LEN) : m === 'quick' ? null : dueQs().slice(0, 10); L = null; if (m === 'quick') quick(); else { startSession(m, qs, l); L.showTip = false; renderLesson(); } },
+    'confirm-yes'() { const f = confirmFn; confirmFn = null; closeSheet(); f?.(); },
+    'confirm-no'() { confirmFn = null; closeSheet(); },
+    'exam-prev'() { E.i--; renderExam(); },
+    'exam-next'() { E.i++; renderExam(); },
+    'exam-grid'() { openSheet({ kind: 'grid' }); },
+    'exam-submit'() { closeSheet(); trySubmit(); },
+    'exam-quit'() { confirmBox('시험을 그만둘 거야?', '지금까지 푼 답은 저장되지 않아.', '그만두기', '계속 풀기', () => { clearInterval(E.timer); E = null; S.tab = 'mock'; renderApp(); }); },
+    export() {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
+      a.download = `삐약코드_진행_${today()}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    },
+    import() { document.getElementById('importFile').click(); },
+    reset() { confirmBox('처음부터 다시 할까?', '모든 기록이 지워지고 되돌릴 수 없어. 필요하면 먼저 내보내기를 해 둬.', '전부 지우기', '취소', () => { S = { ...DEF, days: {}, l: {}, q: {}, mocks: [] }; save(); renderApp(); }); },
+  };
+  acts[d.act]?.();
+});
+const sheetTipSeen = () => sheetTipFlag && !(sheetTipFlag = false);
+let sheetTipFlag = false;
+document.addEventListener('click', e => { if (e.target.closest('[data-tip]')) sheetTipFlag = true; else if (e.target.closest('[data-lesson]')) sheetTipFlag = false; }, true);
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'ans') {
+    L.input = e.target.value;
+    const b = document.getElementById('checkBtn');
+    if (b) b.disabled = !canCheck(L.queue[0]);
+  }
+  if (e.target.id === 'eans') {
+    E.ans[E.i] = e.target.value;
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'examDate') { S.exam = e.target.value; save(); renderApp(); }
+  if (e.target.id === 'importFile' && e.target.files[0]) {
+    e.target.files[0].text().then(txt => {
+      const o = JSON.parse(txt);
+      if (typeof o.xp !== 'number' || typeof o.days !== 'object') throw new Error('형식 오류');
+      S = { ...DEF, ...o }; save(); renderApp();
+    }).catch(() => confirmBox('불러오지 못했어', '이 앱에서 내보낸 파일이 맞는지 확인해 줘.', '닫기', '확인', () => {}));
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.isComposing) return;
+  if (document.querySelector('.overlay')) {
+    if (e.key === 'Escape') { confirmFn = null; closeSheet(); }
+    return;
+  }
+  if (L && !L.result) {
+    if (e.key === 'Enter') {
+      if (e.target.closest?.('button') && e.target.id !== 'goBtn' && e.target.id !== 'checkBtn') return;
+      e.preventDefault();
+      if (e.repeat) return;
+      if (L.showTip) { L.showTip = false; L.fresh = true; return renderLesson(); }
+      if (L.st === 'ask') check(); else nextQ();
+      return;
+    }
+    if (!L.showTip && L.st === 'ask' && L.queue[0]?.k === 'mc' && /^[1-9]$/.test(e.key)) {
+      const i = Number(e.key) - 1;
+      if (i < L.queue[0].o.length) { L.sel = i; renderLesson(); }
+    }
+    return;
+  }
+  if (E) {
+    if (E.qs[E.i].k === 'mc' && /^[1-9]$/.test(e.key)) {
+      const i = Number(e.key) - 1;
+      if (i < E.qs[E.i].o.length) { E.ans[E.i] = i; renderExam(); }
+    }
+    if (e.key === 'Enter' && !e.repeat && !e.target.closest?.('button')) {
+      e.preventDefault();
+      if (E.i < E.qs.length - 1) { E.i++; renderExam(); } else trySubmit();
+    }
+  }
+});
+window.addEventListener('beforeunload', e => { if (E) e.preventDefault(); });
+
+renderApp();
+
+</script>
+</body>
+</html>
