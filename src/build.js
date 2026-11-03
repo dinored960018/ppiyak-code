@@ -4,6 +4,7 @@ const path = require('path');
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8');
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
 const questions = read('questions.js').replace(/if \(typeof module[^\n]*\n/, '');
+const learn = fs.readdirSync(path.join(__dirname, 'learn')).sort().map(f => read(path.join('learn', f))).join('\n');
 const html = `<!doctype html>
 <html lang="ko">
 <head>
@@ -21,6 +22,7 @@ ${read('style.css')}
 <div id="app"></div>
 <script>
 ${safe(questions)}
+${safe(learn)}
 ${safe(read('app.js'))}
 </script>
 </body>

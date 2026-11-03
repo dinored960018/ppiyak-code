@@ -210,7 +210,19 @@ code { font-family: var(--mono); font-size: .9em; background: var(--surface-2); 
 .foot-row .link { flex: none; }
 .tip-page { text-align: left; }
 .tip-page .chick { width: 90px; height: 90px; display: block; margin: 6px 0 8px; }
-.tip-page h2 { font-size: 24px; font-weight: 900; }
+.tip-page h2 { font-size: 24px; font-weight: 900; margin-bottom: 14px; }
+.tip-page .tbs { margin-bottom: 16px; }
+.learn-p { font-size: 16.5px; line-height: 1.7; margin: 0 0 14px; }
+.learn-p b { font-weight: 800; }
+.learn-out { background: var(--surface); border-radius: 12px; padding: 10px 14px; margin: -4px 0 16px; }
+.learn-out span { display: block; font-size: 12.5px; font-weight: 800; color: var(--muted); margin-bottom: 2px; }
+.learn-out pre { margin: 0; font-family: var(--mono); font-size: 14.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.page-no { flex: none; font-size: 13px; font-weight: 800; color: var(--muted); }
+.foot-in.learn-foot { display: flex; flex-direction: row; gap: 12px; }
+.foot-in.learn-foot .btn { flex: 1; min-width: 0; margin: 0; }
+.learn-skip { text-align: center; padding-top: 6px; }
+.q-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.q-head .link { flex: none; font-size: 13px; padding: 0 0 6px; }
 
 /* 결과 */
 .done-page { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 24px 16px; max-width: 480px; margin: 0 auto; }

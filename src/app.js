@@ -424,13 +424,7 @@ function renderSheet() {
       <p class="q-tag">${esc(l.unit.name)}</p><h2>${esc(l.name)}</h2>
       <p class="muted" style="margin:4px 0 14px">${!isDone && !isCur ? '앞 레슨이 남았지만, 아는 내용이면 먼저 풀어도 돼.' : `${l.qs.length}문제 중 ${LESSON_LEN}문제를 뽑아서 풀어.`}</p>
       <button class="btn wide" data-start="${l.id}" id="sheetGo">${isDone ? '한 번 더 풀기' : '시작'}</button>
-      <button class="btn wide ghost" data-tip="${l.id}">요약 먼저 보기</button></div></div>`;
-  }
-  if (sheet.kind === 'tip') {
-    const l = LESSONS.find(x => x.id === sheet.id);
-    return `<div class="overlay" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(l.name)} 요약"><h2>${esc(l.name)}</h2>
-      <ul class="tip-list">${l.tip.map(t => `<li>${fmt(t)}</li>`).join('')}</ul>
-      <button class="btn wide" style="margin-top:16px" data-start="${l.id}" id="sheetGo">문제 풀기</button></div></div>`;
+      <button class="btn wide ghost" data-learn="${l.id}">설명 보기</button></div></div>`;
   }
   if (sheet.kind === 'confirm') {
     return `<div class="overlay"><div class="sheet" role="alertdialog" aria-modal="true" aria-label="${esc(sheet.title)}"><h2>${esc(sheet.title)}</h2><p class="muted" style="margin:6px 0 16px">${esc(sheet.body)}</p>
@@ -501,14 +495,34 @@ function answerText(q) {
   if (q.k === 'ord') return `<code>${esc(q.a.join(' '))}</code>`;
   return q.pairs.map(p => `${esc(p[0])} = ${esc(p[1])}`).join(', ');
 }
+function learnPages(l) {
+  return [...(LEARN[l.id] || []), ['핵심만 다시 보기', { tips: l.tip }]];
+}
+const learnFmt = s => {
+  const codes = [];
+  return esc(s).replace(/`([^`]+)`/g, (_, c) => `\u0001${codes.push(c) - 1}\u0001`).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\u0001(\d+)\u0001/g, (_, n) => `<code>${codes[n]}</code>`);
+};
+function learnBlock(b) {
+  if (typeof b === 'string') return `<p class="learn-p">${learnFmt(b)}</p>`;
+  if (b.tips) return `<ul class="tip-list">${b.tips.map(t => `<li>${fmt(t)}</li>`).join('')}</ul>`;
+  return `${tables(b.tb)}${b.c ? codeBlock(b.c, b.lang) : ''}${b.out !== undefined ? `<div class="learn-out"><span>실행 결과</span><pre>${esc(b.out)}</pre></div>` : ''}`;
+}
+function learnMove(d) {
+  L.page = (L.page || 0) + d; L.fresh = true; renderLesson();
+  document.getElementById('learnBody')?.scrollTo(0, 0);
+}
+function learnEnd() {
+  L.showTip = false; L.learnL = null; L.page = 0; L.fresh = true; renderLesson();
+}
 function renderLesson() {
   if (L.result) return renderDone();
   const pct = Math.round(L.done / L.total * 100);
   if (L.showTip) {
-    const l = L.lesson;
-    app().innerHTML = `<div class="lesson u-${l.unit.color}"><div class="l-top"><button class="x" data-act="quit" aria-label="나가기">${icon('x')}</button><div class="bar"><i style="width:0"></i></div></div>
-      <div class="l-body"><div class="l-inner tip-page enter">${chick('idle')}<h2>${esc(l.name)}</h2><p class="muted">30초 요약부터 보고 시작하자.</p><ul class="tip-list">${l.tip.map(t => `<li>${fmt(t)}</li>`).join('')}</ul></div></div>
-      <div class="l-foot"><div class="foot-in"><button class="btn wide" data-act="tip-go" id="goBtn">문제 풀기</button></div></div></div>`;
+    const l = L.learnL || L.lesson, pages = learnPages(l), n = pages.length, i = L.page || 0, last = i === n - 1;
+    app().innerHTML = `<div class="lesson u-${l.unit.color}"><div class="l-top"><button class="x" data-act="${L.learnL ? 'learn-close' : 'quit'}" aria-label="${L.learnL ? '설명 닫기' : '나가기'}">${icon('x')}</button><div class="bar" role="progressbar" aria-valuenow="${i + 1}" aria-valuemax="${n}"><i style="width:${(i + 1) / n * 100}%"></i></div><div class="page-no">${i + 1} / ${n}</div></div>
+      <div class="l-body" id="learnBody"><div class="l-inner tip-page ${L.fresh ? 'enter' : ''}">${i === 0 ? chick('idle') : ''}<p class="q-tag">${esc(l.name)}</p><h2>${fmt(pages[i][0])}</h2>${pages[i].slice(1).map(learnBlock).join('')}</div></div>
+      <div class="l-foot"><div class="foot-in learn-foot">${i > 0 ? '<button class="btn ghost" data-act="learn-prev">이전</button>' : ''}<button class="btn" data-act="${last ? 'tip-go' : 'learn-next'}" id="goBtn">${last ? (L.learnL ? '문제로 돌아가기' : '문제 풀기') : '다음'}</button></div>${i === 0 && !last && !L.learnL ? '<div class="learn-skip"><button class="link" data-act="tip-go">아는 내용이면 바로 풀기</button></div>' : ''}</div></div>`;
+    L.fresh = false;
     document.getElementById('goBtn').focus();
     return;
   }
@@ -523,7 +537,7 @@ function renderLesson() {
   app().innerHTML = `<div class="lesson"><div class="l-top"><button class="x" data-act="quit" aria-label="나가기">${icon('x')}</button>
       <div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemax="100"><i style="width:${pct}%"></i></div>
       <div class="hearts ${L.hit ? 'hit' : ''}" aria-label="하트 ${L.hearts}개">${icon('heart')}${L.hearts}</div></div>
-    <div class="l-body"><div class="l-inner ${L.fresh ? 'enter' : ''} ${L.shake ? 'shake' : ''}">${L.isRetry ? '<p class="q-tag">다시 도전</p>' : `<p class="q-tag">${esc(q.lname)}</p>`}${questionHtml(q, locked)}</div></div>${foot}</div>`;
+    <div class="l-body"><div class="l-inner ${L.fresh ? 'enter' : ''} ${L.shake ? 'shake' : ''}"><div class="q-head">${L.isRetry ? '<p class="q-tag">다시 도전</p>' : `<p class="q-tag">${esc(q.lname)}</p>`}<button class="link" data-act="learn-open">설명 보기</button></div>${questionHtml(q, locked)}</div></div>${foot}</div>`;
   L.fresh = false; L.hit = false; L.shake = false;
   if (locked) document.getElementById('goBtn')?.focus();
   else if (q.k === 'in') document.getElementById('ans')?.focus();
@@ -754,8 +768,8 @@ document.addEventListener('click', e => {
   const d = t.dataset;
   if (d.tab) { S.tab = d.tab; save(); renderApp(); window.scrollTo(0, 0); return; }
   if (d.lesson) return openSheet({ kind: 'lesson', id: d.lesson });
-  if (d.tip) return openSheet({ kind: 'tip', id: d.tip });
-  if (d.start) { const l = LESSONS.find(x => x.id === d.start); startSession('lesson', pickFor(l, LESSON_LEN), l); if (sheetTipSeen(d.start)) { L.showTip = false; renderLesson(); } return; }
+  if (d.learn) { const l = LESSONS.find(x => x.id === d.learn); startSession('lesson', pickFor(l, LESSON_LEN), l); L.showTip = true; L.page = 0; L.fresh = true; renderLesson(); return; }
+  if (d.start) { const l = LESSONS.find(x => x.id === d.start); startSession('lesson', pickFor(l, LESSON_LEN), l); return; }
   if (d.mock) return startMock(d.mock);
   if (d.color !== undefined) { S.profile = { ...S.profile, color: Number(d.color) }; stamp(); save(); return renderApp(); }
   if (d.goal) { S.goal = Number(d.goal); stamp(); save(); return renderApp(); }
@@ -774,7 +788,11 @@ document.addEventListener('click', e => {
     review() { startSession('review', dueQs().slice(0, 10), null); },
     next: nextQ,
     override,
-    'tip-go'() { L.showTip = false; L.fresh = true; renderLesson(); },
+    'tip-go'() { learnEnd(); },
+    'learn-next'() { learnMove(1); },
+    'learn-prev'() { learnMove(-1); },
+    'learn-close'() { learnEnd(); },
+    'learn-open'() { L.learnL = LESSONS.find(x => x.id === L.queue[0].id.split('-')[0]); L.page = 0; L.showTip = true; L.fresh = true; renderLesson(); },
     quit() {
       if (L.done === 0 && L.st === 'ask') { L = null; return renderApp(); }
       confirmBox('지금 나갈 거야?', '맞힌 문제의 XP는 남지만 이 레슨은 완료로 안 쳐.', '나가기', '계속 풀기', () => { L = null; closeSheet(); renderApp(); });
@@ -800,9 +818,6 @@ document.addEventListener('click', e => {
   };
   acts[d.act]?.();
 });
-const sheetTipSeen = () => sheetTipFlag && !(sheetTipFlag = false);
-let sheetTipFlag = false;
-document.addEventListener('click', e => { if (e.target.closest('[data-tip]')) sheetTipFlag = true; else if (e.target.closest('[data-lesson]')) sheetTipFlag = false; }, true);
 
 document.addEventListener('input', e => {
   if (e.target.id === 'ans') {
@@ -836,7 +851,7 @@ document.addEventListener('keydown', e => {
       if (e.target.closest?.('button') && e.target.id !== 'goBtn' && e.target.id !== 'checkBtn') return;
       e.preventDefault();
       if (e.repeat) return;
-      if (L.showTip) { L.showTip = false; L.fresh = true; return renderLesson(); }
+      if (L.showTip) { if ((L.page || 0) < learnPages(L.learnL || L.lesson).length - 1) learnMove(1); else learnEnd(); return; }
       if (L.st === 'ask') check(); else nextQ();
       return;
     }
